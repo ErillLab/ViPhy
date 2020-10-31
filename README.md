@@ -1,2 +1,2 @@
 # ViPhy
-Virus Phylogeny System
+Virus phylogeny system 
