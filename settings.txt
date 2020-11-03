@@ -1,0 +1,11 @@
+{
+"input_file": "fasta",
+"working_folder": "",
+"output_folder": "Results/",
+"analysis_type": "nucleotide",
+"e_value": 1,
+"distance_function": "coverage",
+"confidence_interval": "bootstrapping"
+}
+
+

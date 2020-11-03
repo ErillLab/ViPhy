@@ -13,15 +13,12 @@ The steps in the script are the following:
 5. Swaps the DNA sequences for protein sequences
 6. Join the six frames in the same sequence
 7. Stores the combined protein sequence in a new fasta file
-8. Compares the resulting protein sequence against the protein sequence of ``expectedResult.fasta`` file.
 
 ## Other files
 
 - ``Sequence.fasta``: Contains a DNA sequence example obtained from Genbank database. The sequences should be stored in this file format.
 
 - ``proteinSeq.fasta``: Contains the sequence of amino acids obtained after running this program.
-
-- ``expectedResult.fasta``: Contains the protein sequence we are hoping to achieve. 
 
 ## Dependencies
 
