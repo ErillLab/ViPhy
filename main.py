@@ -159,9 +159,10 @@ def compareFiles(input_file, output_file):
 
 # Main function
 if __name__ == '__main__':
+
     try:
-        with open("settings.txt", 'r', encoding='utf-8') as f:
-            json_file = json.load(f)
+        setting_file = open('settings.json', )
+        json_file = json.load(setting_file)
 
         fasta_file = json_file["working_folder"] + 'sequence.fasta'
         gb_file = json_file["working_folder"] + 'sequence.gb'
@@ -213,6 +214,7 @@ if __name__ == '__main__':
                     print('Could not find the genbank file')
             else:
                 print('Incorrect analysis_type value in json file')
+        setting_file.close()
 
     except:
         print('Could not open settings.txt')
