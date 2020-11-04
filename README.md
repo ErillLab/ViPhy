@@ -7,7 +7,7 @@ The script ``main.py`` translate a nucleotide sequence(DNA) into a sequence of a
 
 The steps in the script are the following:
 
-1. Opens and reads ``settings.txt``
+1. Opens and reads ``settings.json``
 2. Reads a sequence(DNA) from a fasta or a genbank file
 3. Tranforms the sequences into a string
 4.1 If the input file contained a nucleotide sequence, then we start a translation process.(steps 5 to 9)
@@ -19,7 +19,7 @@ The steps in the script are the following:
 9. Stores the combined protein sequence in a new fasta file
 
 
-## Settings.txt
+## Settings.json
 
 This file contains important information for the correct operation of the code. Please, don't change this file path!
 
