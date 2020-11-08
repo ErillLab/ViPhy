@@ -3,7 +3,7 @@ Virus phylogeny system.
 
 
 ## The script
-The script ``main.py`` translate a nucleotide sequence(DNA) into a sequence of amino acids.
+The script ``main.py`` transcribe and translate a nucleotide sequence(DNA) into a sequence of proteins.
 
 The steps in the script are the following:
 
@@ -19,7 +19,20 @@ The steps in the script are the following:
 9. Stores the combined protein sequence in a new fasta file
 
 
-## Settings.txt
+## Viphy-env.yml
+
+Conda environment created using Phyton38 that contains a specific collection of conda packages installed to ensure the smooth running of the program.
+
+To activate the `viphy-env.yml` environment:
+
+	``$ conda activate viphy-env``
+
+To deactivate the conda environment:
+
+	``$ source deactivate``
+
+
+## Settings.json
 
 This file contains important information for the correct operation of the code. Please, don't change this file path!
 
@@ -27,17 +40,21 @@ Structure of the JSON file:
 
 ``
 {
-"input_file": "fasta",
-"working_folder": "",
-"output_folder": "Results/",
-"analysis_type": "nucleotide"
+"input_folder" : "genome_data",
+"genome_accessions": [["GQ919031.1", "JX182370.1"], ["NC_015464"], ["NC_042011.1"]],
+"output_folder" : "results",
+"working_folder" : "tmp",
+"analysis_type": "nucleotide",
 }
 ``
+
+
 ### Features: 
 
-- "input_file": Can be "fasta" (fasta file) or "gb" (genbank file).
-- "working_folder":  Path for the directory in which the inbound files are located.
-- "output_folder": Path for the directory in which the outgoing files are located.
+- "input_folder": Folder where you can find the fasta or genbank files that the program will read
+- "genome_accessions": List of lists that contains the identifier of the files you want to download from Genbank database. 
+- "working_folder": Path for the directory in which all the other files are located.
+- "output_folder": Folder in which the outgoing files will be located.
 - "analysis_type": Can be "nucleotide" or "protein"
 
 
