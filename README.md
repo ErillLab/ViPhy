@@ -7,14 +7,11 @@ The script ``main.py`` translate a nucleotide sequence(DNA) into a sequence of a
 
 The steps in the script are the following:
 
-1. Opens and reads ``settings.json``
+1. Opens and reads ``settings.txt``
 2. Reads a sequence(DNA) from a fasta or a genbank file
-3. Tranforms the sequence into a string
-
-4.1 If the input file contained a nucleotide sequence, then we start a translation process(steps 5 to 9).
-
+3. Tranforms the sequences into a string
+4.1 If the input file contained a nucleotide sequence, then we start a translation process.(steps 5 to 9)
 4.2 If the input file contained a protein sequence, then we save it into a new fasta file
-
 5. Generates the three possible frames for each sequence (+1, +2, +3)
 6. Reverse the nucleotide sequence (string) and generates the last three possible frames for each sequence (-1, -2, -3)
 7. Swaps the DNA sequences for protein sequences
@@ -22,9 +19,9 @@ The steps in the script are the following:
 9. Stores the combined protein sequence in a new fasta file
 
 
-## Configuration file 
+## Settings.txt
 
-``settings.json`` file contains important information for the correct operation of the code. Please, don't change this file path!
+This file contains important information for the correct operation of the code. Please, don't change this file path!
 
 Structure of the JSON file:
 
@@ -36,8 +33,7 @@ Structure of the JSON file:
 "analysis_type": "nucleotide"
 }
 ``
-
-### Details: 
+### Features: 
 
 - "input_file": Can be "fasta" (fasta file) or "gb" (genbank file).
 - "working_folder":  Path for the directory in which the inbound files are located.
