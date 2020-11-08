@@ -7,16 +7,18 @@ The script ``main.py`` transcribe and translate a nucleotide sequence(DNA) into 
 
 The steps in the script are the following:
 
-1. Opens and reads ``settings.txt``
-2. Reads a sequence(DNA) from a fasta or a genbank file
-3. Tranforms the sequences into a string
-4.1 If the input file contained a nucleotide sequence, then we start a translation process.(steps 5 to 9)
-4.2 If the input file contained a protein sequence, then we save it into a new fasta file
-5. Generates the three possible frames for each sequence (+1, +2, +3)
-6. Reverse the nucleotide sequence (string) and generates the last three possible frames for each sequence (-1, -2, -3)
-7. Swaps the DNA sequences for protein sequences
-8. Join the six frames in the same sequence
-9. Stores the combined protein sequence in a new fasta file
+1. Opens and reads ``settings.json``
+2. If the analysis_type indicated in the Json file is 'nucleotide':
+2.1. Traverses directories and subdirectories until there are no more files to read.
+2.1.1. When it finds a fasta file, it checks if the file contains a nucleotide sequence. If not, then returns to the step 2.1.. 
+2.1.2. When it finds a genbank file, it extracts the nucleotide sequence from the file. 
+2.1.3. Transcribes and translates the nucleotide sequence into a protein sequence.
+2.1.4. Stores the combined protein sequence in a new fasta file
+3. If the analysis_type indicated in the Json file is 'protein':
+3.1. Traverses directories and subdirectories until there are no more files to read.
+3.1.1. When it finds a fasta file, it checks if the file contains a nucleotide sequence. If so, stores the sequence into a new fasta file. 
+3.1.2. When it finds a genbank file, it extracts the protein sequence from the file. 
+3.1.2.1. Stores the combined protein sequence in a new fasta file
 
 
 ## Viphy-env.yml
@@ -25,11 +27,11 @@ Conda environment created using Phyton38 that contains a specific collection of 
 
 To activate the `viphy-env.yml` environment:
 
-	``$ conda activate viphy-env``
+	$ conda activate viphy-env
 
 To deactivate the conda environment:
 
-	``$ source deactivate``
+	$ source deactivate
 
 
 ## Settings.json
@@ -40,11 +42,17 @@ Structure of the JSON file:
 
 ``
 {
+
 "input_folder" : "genome_data",
+
 "genome_accessions": [["GQ919031.1", "JX182370.1"], ["NC_015464"], ["NC_042011.1"]],
+
 "output_folder" : "results",
+
 "working_folder" : "tmp",
+
 "analysis_type": "nucleotide",
+
 }
 ``
 
@@ -60,9 +68,9 @@ Structure of the JSON file:
 
 ## Other files
 
-- ``sequence.fasta``: Fasta file containing a nucleotide or amino acid sequence, obtained from Genbank database. 
+- Fasta files: Inside `Inputs` folder. Documents that contain a nucleotide or amino acid sequence that the program will read. If the content is a nucleotide sequence, it will be translates into proteins.
 
-- ``sequence.gb``: Genbank file where you can obtained a nucleotido or amino acid sequence. 
+- Genbank files: Inside `Inputs` folder. Documents where you can obtained a nucleotide or amino acid sequence, together with other relevant information. 
 
 - ``expectedResult.fasta``: Contains a expected protein sequence. It can be used for testing the translation process. 
 
@@ -70,6 +78,8 @@ Structure of the JSON file:
 
 
 ## Folders
+
+- ``Inputs``: Folder to stores the set of files that the program will read 
 
 - ``Results``: Folder to stores the resulting sequences after the translation ends. 
 
