@@ -45,6 +45,12 @@ To deactivate the conda environment:
 	$ source deactivate
 
 
+### Dependencies
+
+- Python 3.8.3
+- Biopython 1.78
+
+
 ## Settings.json
 
 This file contains important information for the correct operation of the code. Please, don't change this file path!
@@ -53,6 +59,7 @@ Structure of the JSON file:
 
 
 {
+
 	"input_folder" : "genome_data",
 
 	"genome_accessions": [["GQ919031.1", "JX182370.1"], ["NC_015464"], ["NC_042011.1"]],
@@ -66,7 +73,7 @@ Structure of the JSON file:
 
 
 
-### Features: 
+### Details of the JSON file: 
 
 - "input_folder": Folder where you can find the fasta or genbank files that the program will read
 - "genome_accessions": List of lists that contains the identifier of the files you want to download from Genbank database. 
@@ -93,7 +100,3 @@ Structure of the JSON file:
 - ``Results``: Folder to stores the resulting sequences after the translation ends. 
 
 
-## Dependencies
-
-- Python 3.8.3
-- Biopython 1.78

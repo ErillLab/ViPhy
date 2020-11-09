@@ -107,16 +107,17 @@ def gbToString(gb_file):
         print("Genbank file is incomplete")
 
 
-def exportFasta(protein_seq, fasta_name, output_folder):
+def exportFasta(protein_seq, fasta_name, output_folder, file_name):
     '''
     Saves the protein sequence into a fasta file
     :param protein_seq: combination of the six possible protein sequences. Obtained from "nucleotideToAminoacid" function
     :param fasta_name: first line from the original fasta file
     :param output_folder: directory where fasta file will be saved
-    :return: Returns the directory where the fasta file is stored
+    :param file_name: name of the input file
     '''
     file_content = ""
-    output_file = output_folder + 'proteinSeq.fasta'
+    output_file = output_folder + file_name
+
     file = open(output_file, "w")
     for i in protein_seq:
         file_content += i
@@ -124,7 +125,6 @@ def exportFasta(protein_seq, fasta_name, output_folder):
     file_content = fasta_name + '\n' + file_content
     file.write(file_content)
     file.close()
-    return output_file
 
 
 
@@ -174,7 +174,7 @@ if __name__ == '__main__':
                             protein_seq = nucleotideToAminoacid(RNAseq)
 
                             # Create the fasta file that will contain the resulting protein sequence
-                            output_file = exportFasta(protein_seq, identifier_seq, final_output_path)
+                            exportFasta(protein_seq, identifier_seq, final_output_path, fname)
                         else:
                             print(fname + ' does not contain a nucleotide sequence')
 
@@ -211,7 +211,7 @@ if __name__ == '__main__':
                                     print('Could not find the genbank file')
 
                             if is_nucleotide == False:
-                                output_file = exportFasta(protein_seq, fasta_seq_name, final_output_path)
+                                exportFasta(protein_seq, fasta_seq_name, final_output_path, fname)
                         else:
                             print('Incorrect analysis_type value in json file')
                     setting_file.close()
