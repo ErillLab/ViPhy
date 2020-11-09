@@ -20,7 +20,9 @@ The steps in the script are the following:
 2.1.3. Transcribes and translates the nucleotide sequence into a protein sequence.
 
 2.1.4. Stores the combined protein sequence in a new fasta file
+
 3. If the analysis_type indicated in the Json file is 'protein':
+
 3.1. Traverses directories and subdirectories until there are no more files to read.
 
 3.1.1. When it finds a fasta file, it checks if the file contains a nucleotide sequence. If so, stores the sequence into a new fasta file. 
@@ -51,7 +53,6 @@ Structure of the JSON file:
 
 
 {
-
 	"input_folder" : "genome_data",
 
 	"genome_accessions": [["GQ919031.1", "JX182370.1"], ["NC_015464"], ["NC_042011.1"]],
@@ -61,7 +62,6 @@ Structure of the JSON file:
 	"working_folder" : "tmp",
 
 	"analysis_type": "nucleotide",
-
 }
 
 
