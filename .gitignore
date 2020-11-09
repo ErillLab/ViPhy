@@ -55,6 +55,13 @@ coverage.xml
 *.mo
 *.pot
 
+# Extensions
+venv
+/venv
+venv/
+env/
+env
+
 # Django stuff:
 *.log
 local_settings.py
