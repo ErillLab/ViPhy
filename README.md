@@ -8,16 +8,25 @@ The script ``main.py`` transcribe and translate a nucleotide sequence(DNA) into 
 The steps in the script are the following:
 
 1. Opens and reads ``settings.json``
+
 2. If the analysis_type indicated in the Json file is 'nucleotide':
+
 2.1. Traverses directories and subdirectories until there are no more files to read.
+
 2.1.1. When it finds a fasta file, it checks if the file contains a nucleotide sequence. If not, then returns to the step 2.1.. 
+
 2.1.2. When it finds a genbank file, it extracts the nucleotide sequence from the file. 
+
 2.1.3. Transcribes and translates the nucleotide sequence into a protein sequence.
+
 2.1.4. Stores the combined protein sequence in a new fasta file
 3. If the analysis_type indicated in the Json file is 'protein':
 3.1. Traverses directories and subdirectories until there are no more files to read.
+
 3.1.1. When it finds a fasta file, it checks if the file contains a nucleotide sequence. If so, stores the sequence into a new fasta file. 
+
 3.1.2. When it finds a genbank file, it extracts the protein sequence from the file. 
+
 3.1.2.1. Stores the combined protein sequence in a new fasta file
 
 
@@ -40,21 +49,21 @@ This file contains important information for the correct operation of the code. 
 
 Structure of the JSON file:
 
-``
+
 {
 
-"input_folder" : "genome_data",
+	"input_folder" : "genome_data",
 
-"genome_accessions": [["GQ919031.1", "JX182370.1"], ["NC_015464"], ["NC_042011.1"]],
+	"genome_accessions": [["GQ919031.1", "JX182370.1"], ["NC_015464"], ["NC_042011.1"]],
 
-"output_folder" : "results",
+	"output_folder" : "results",
 
-"working_folder" : "tmp",
+	"working_folder" : "tmp",
 
-"analysis_type": "nucleotide",
+	"analysis_type": "nucleotide",
 
 }
-``
+
 
 
 ### Features: 
