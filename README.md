@@ -34,13 +34,13 @@ The steps in the script are the following:
 4.1.2.1. Stores the combined protein sequence in a new fasta file
 
 
-## Viphy-env.yml
+## Viphy_env.yml
 
 Conda environment created using Phyton38 that contains a specific collection of conda packages installed to ensure the smooth running of the program.
 
-To activate the `viphy-env.yml` environment:
+To activate the `viphy_env.yml` environment:
 
-	$ conda activate viphy-env
+	$ conda activate virtual-env
 
 To deactivate the conda environment:
 
