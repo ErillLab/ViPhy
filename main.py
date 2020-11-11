@@ -5,6 +5,7 @@ from Bio.Seq import Seq, reverse_complement
 import os.path as path
 import json
 import os
+from Bio import Entrez
 
 
 
@@ -126,7 +127,26 @@ def exportFasta(protein_seq, fasta_name, output_folder, file_name):
     file.write(file_content)
     file.close()
 
+def accessingNCBI(user_email, genome_id, working_folder, input_folder):
+    '''
+    Downloads sequences from NCBI in GenBank plain text format and saves it into input folder
+    :param user_email: email that will be used to identify you in
+    :param genome_id: genbank identifier. You can use it instead of the species name
+    :param working_folder: directory where the full project is stored
+    :param input_folder: folder where input files are stored
+    '''
 
+    Entrez.email = user_email  # Always tell NCBI who you are
+    filename = genome_id + ".gb"
+    input_path = '.'
+    print('Downloading...')
+
+    handle = Entrez.efetch(db="nucleotide", id=genome_id, rettype="gb", retmode="text")
+
+    file = open(input_path + working_folder + "\\" + input_folder + "\\" + filename, "w")
+    file.write(handle.read())
+
+    file.close()
 
 # Main function
 if __name__ == '__main__':
@@ -136,11 +156,15 @@ if __name__ == '__main__':
     try:
         setting_file = open('settings.json', )
     except:
-        print('Could not open settings.txt')
+        print('Could not open settings.json')
 
     json_file = json.load(setting_file)  # Read json file
 
-    test_file = 'expectedResult.fasta'
+    # Get files from NCBI
+    accessing_list = json_file["genome_accessions"]
+    for list in accessing_list:
+        for id in list:
+            accessingNCBI(json_file['user_email'], id, json_file["working_folder"], json_file["input_folder"])
 
     # Read directories and subdirectories
     input_path = "."
@@ -158,12 +182,14 @@ if __name__ == '__main__':
                     if json_file["analysis_type"] == 'nucleotide':
                         if extension == '.fasta':
                             if path.exists(final_path):
+                                print('Reading ' + fname)
                                 RNAseq, identifier_seq, nucleotide_type = fastaToString(final_path)
                             else:
                                 print('Could not find', fname)
 
                         if extension == '.gb' or extension == '.gbk':
                             if path.exists(final_path):
+                                print('Reading ' + fname)
                                 RNAseq, identifier_seq = gbToString(final_path)
                                 nucleotide_type = True
                             else:
@@ -185,6 +211,7 @@ if __name__ == '__main__':
                             fasta_seq_name = ""
                             if extension == '.fasta':
                                 if path.exists(full_path):
+                                    print('Reading ' + fname)
                                     fasta_sequences = SeqIO.parse(open(full_path), 'fasta')
                                     for fasta in fasta_sequences:
                                         fasta_seq_name += fasta.id
@@ -197,6 +224,7 @@ if __name__ == '__main__':
                                 protein_list = []
                                 is_nucleotide == False
                                 if path.exists(full_path):
+                                    print('Reading ' + fname)
                                     try:
                                         for seq_record in SeqIO.parse(open(full_path, "r"), "genbank"):
                                             for seq_feature in seq_record.features:
@@ -215,9 +243,6 @@ if __name__ == '__main__':
                         else:
                             print('Incorrect analysis_type value in json file')
                     setting_file.close()
-
-
-
 
 
 

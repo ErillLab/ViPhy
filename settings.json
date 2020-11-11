@@ -1,6 +1,6 @@
 
 {
-
+"user_email": "A.N.Other@example.com",
 "input_folder" : "Inputs",
 "genome_accessions": [["GQ919031.1", "JX182370.1"], ["NC_015464"], ["NC_042011.1"]],
 "output_folder" : "Results",
