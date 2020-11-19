@@ -2,247 +2,323 @@
 
 from Bio import SeqIO
 from Bio.Seq import Seq, reverse_complement
-import os.path as path
+from Bio import Entrez
 import json
 import os
-from Bio import Entrez
+import os.path as path
+import re
 
 
-
-def nucleotideToAminoacid(RNAseq):
+def accessing_ncbi(accessing_list, user_email, input_folder):
     '''
-    Translates a nucleotide sequence into six amino acid sequences.
-    :param RNAseq: nucleotide sequence, should be string
-    :return: Returns a single amino acid sequence that come from combining the six possible amino acid sequences, should be string
+    Goes through the accessing list to find the files that the user whats to download from NCBI and call
+    another function to do so.
+    :param accessing_list: list of lists that contains the elements we want to download
+    :param user_email: email that will be used to identify the user in NCBI
+    :param input_folder: folder where files will be stored
     '''
-    directions = 2
-    final_protein_seq = ""
+    for list in accessing_list:
+        list_length = len(list)
+        if list_length == 1:
+            file_name = list[0] + ".gb"
+            file_path = input_folder + '/' + file_name
 
-    # First direction: j = 0 / Second direction: j = 1
-    for j in range(0, directions):
-        protein_seq1 = ""
-        protein_seq2 = ""
-        protein_seq3 = ""
-        for i in range(0, len(RNAseq), 3):
-            codon1 = RNAseq[i:i + 3]
-            codon2 = RNAseq[i + 1:i + 4]
-            codon3 = RNAseq[i + 2:i + 5]
-            if (len(codon1)==3):
-                codon1 = Seq(codon1)
-                protein_seq1 += codon1.translate('1')
-            if (len(codon2)==3):
-                codon2 = Seq(codon2)
-                protein_seq2 += codon2.translate('1')
-            if (len(codon3)==3):
-                codon3 = Seq(codon3)
-                protein_seq3 += codon3.translate('1')
-        final_protein_seq += protein_seq1 + protein_seq2 + protein_seq3
+            if not os.path.exists(file_path):  # Checks if the file was downloaded before
+                print('Downloading ' + file_name)
+                download_file(user_email, file_path, list)
 
-        if j == 0:
-            RNAseq = reverse_complement(RNAseq) # Return the reverse complement sequence
-            RNAseq = str(RNAseq)
+        if list_length > 1:
+            folder_name = list[0].split('.')  # Deletes possible dots in the folder name
+            folder_path = input_folder + '/' + folder_name[0]
 
-    final_protein_seq = str(final_protein_seq)
+            if not os.path.exists(folder_path):  # Checks if there is a folder with the same name
+                os.mkdir(folder_path)  # Creates a folder
+            for position in range(list_length):
+                file_name = list[position] + ".gb"
+                file_path = folder_path + '/' + file_name
+                if not os.path.exists(file_path):  # Checks if the file was downloaded before
+                    print('Downloading ' + file_name)
+                    download_file(user_email, file_path, list)
 
-    return final_protein_seq
 
-def isNucleotide(nucleotide_line):
+def download_file(user_email, file_path, list):
+    '''
+    Downloads files form NCBI in GenBank plain text format and saves it into the input folder
+    :param user_email: email that will be used to identify the user in NCBI
+    :param file_path: input folder path or subdirectory where the files will be saved
+    :param list: list that contains the files to download
+    '''
+    match = re.search(r'[\w.-]+@[\w.-]+.\w+', user_email)
+    if match:
+        Entrez.email = user_email  # Always tell NCBI who you are
+        try:
+            handle = Entrez.efetch(db="nucleotide", id=list[0], rettype="gbwithparts", retmode="text")
+            data = handle.read()
+            f = open(file_path, "w")
+            f.write(data)
+            f.close()
+        except Exception:
+            print("Error! Cannot fetch " + list[0])
+    else:
+        print("Please, introduce a valid email address format")
+
+
+def read_fasta_file(input_folder, fasta_file):
+    '''
+    Reads a fasta file to obtain a nucleotide or protein sequence.
+    :param input_folder: folder from where we obtain the file to read
+    :param fasta_file: file that contains a nucleotide or protein sequence, should be FASTA format
+    :return: Returns a list with the identifier and another list with the nucleotide sequence
+    '''
+    record_seq = []
+    record_id = []
+    print('Reading ' + fasta_file)
+
+    # This loop allows us to concatenate multiple sequences
+    for record in SeqIO.parse(input_folder + '/' + fasta_file, "fasta"):
+        record_id.append(record.id)
+        record_seq.append(record.seq)
+
+    return record_id, record_seq
+
+
+def read_gb_file(input_folder, gb_file):
+    '''
+    Reads and extracts a nucleotide sequence from a Genbank file
+    :param input_folder: folder from where we obtain the genbank file to read
+    :param gb_file: file that can store several sequences and extra information
+    :return: Returns a list with the identifier and another list with the nucleotide sequence
+    '''
+    record_id = []
+    record_seq = []
+    print('Reading ' + gb_file)
+    for records in SeqIO.parse(input_folder + '/' + gb_file, "genbank"):
+        record_id.append(records.id)
+        record_seq.append(records.seq)
+
+    return record_id, record_seq
+
+
+def get_protein(input_folder, gb_file):
+    '''
+    Reads and extracts protein sequences from a Genbank file
+    :param input_folder: folder from where we obtain the genbank file to read
+    :param gb_file: file that can store several sequences and extra information, including protein sequences
+    :return: Returns a list of identifiers and another of protein sequences obtained from the genbank file
+    '''
+    id_list = []
+    protein_list = []
+    for seq_record in SeqIO.parse(input_folder + '/' + gb_file, "genbank"):
+        for seq_feature in seq_record.features:
+            if seq_feature.type == "CDS":
+                id_list.append(seq_feature.qualifiers['protein_id'][0])
+                protein_list.append(
+                    seq_feature.qualifiers['translation'][0])  # Saves protein sequences
+
+    return id_list, protein_list
+
+
+def is_nucleotide_true(fasta_content):
     '''
     Indicates if the input value is nucleotide sequence by returning a boolean
-    :param nucleotide_line: line from a fasta file that contains a nucleotide or protein sequence
+    :param fasta_content: content from a fasta file that contains a nucleotide or protein sequence
     :return: Returns a boolean, whose value is True when the input value is a nucleotide sequence
     '''
     is_nucleotide = True
 
-    for nucleobase in nucleotide_line:
-        if nucleobase != 'A' and nucleobase != 'C' and nucleobase != 'G' and nucleobase != 'T':
-            if nucleobase == 'N':
-                nucleobase.replace('N', '')
-            else:
+    for sequence in fasta_content:
+        for element in sequence:
+            if element != 'A' and element != 'C' and element != 'G' and element != 'T':
                 is_nucleotide = False
 
     return is_nucleotide
 
 
-def fastaToString(DNAfile):
+def nucleotide_to_protein(file_content):
     '''
-    Takes a FASTA file with a nucleotide or protein sequence, transcribe it into RNA and transforms it to a string.
-    :param DNAfile: file that contains a nucleotide or protein sequence, should be FASTA format
-    :return: Returns the transcribed RNA sequence obtained from the fasta file as a string, the identifier of the fasta
-    file and a boolean value that indicates if "DNAfile" contains a nucleotide sequence.
+    Translates a nucleotide sequence into six amino acid sequences and then concatenate them into one longer sequence
+    :param file_content: list of nucleotide sequences
+    :return: Returns a single amino acid sequence that come from combining the six possible amino acid sequences
     '''
-    DNAseq = ""
-    RNAseq = ""
-    fasta_seq_name = ""
+    final_protein_seq = []
 
-    fasta_sequences = SeqIO.parse(open(DNAfile), 'fasta')
+    for sequence in file_content:
+        directions = 2
+        protein_seq = ""
+        nucleotide_seq = str(sequence)
 
-    for fasta in fasta_sequences:
-        fasta_seq_name, DNAseq = fasta.id, fasta.seq
-    is_nucleotide = isNucleotide(str(DNAseq))
-    if is_nucleotide:
-        RNAseq = str(DNAseq.transcribe())
-    else:
-        is_nucleotide = False
+        # First direction: j = 0 / Second direction: j = 1
+        for j in range(0, directions):
+            protein_seq1 = ""
+            protein_seq2 = ""
+            protein_seq3 = ""
+            for i in range(0, len(nucleotide_seq), 3):
+                codon1 = nucleotide_seq[i:i + 3]
+                codon2 = nucleotide_seq[i + 1:i + 4]
+                codon3 = nucleotide_seq[i + 2:i + 5]
+                if (len(codon1)==3):
+                    codon1 = Seq(codon1)
+                    protein_seq1 += codon1.translate('1')
+                if (len(codon2)==3):
+                    codon2 = Seq(codon2)
+                    protein_seq2 += codon2.translate('1')
+                if (len(codon3)==3):
+                    codon3 = Seq(codon3)
+                    protein_seq3 += codon3.translate('1')
+            protein_seq += protein_seq1 + protein_seq2 + protein_seq3
 
-    return RNAseq, fasta_seq_name, is_nucleotide
+            if j == 0:
+                nucleotide_seq = reverse_complement(nucleotide_seq)  # Return the reverse complement sequence
+                nucleotide_seq = str(nucleotide_seq)
 
-
-def gbToString(gb_file):
-    '''
-    Extracts a nucleotide sequence from a Genbank file, transcribe it into RNA and transforms it to a string.
-    :param gb_file: file that can store several sequences and extra information.
-    :return: Returns the transcribed sequence obtained from the genbank file as a string and its identifier
-    '''
-    gb_name = ""
-    RNAseq = ""
-
-    try:
-        for seq_record in SeqIO.parse(gb_file, "genbank"):
-            gb_name = str(seq_record.id)
-            RNAseq = seq_record.seq.transcribe()
-            RNAseq = str(RNAseq)
-
-        return RNAseq, gb_name
-    except:
-        print("Genbank file is incomplete")
+        final_protein_seq.append(protein_seq)
+    return final_protein_seq
 
 
-def exportFasta(protein_seq, fasta_name, output_folder, file_name):
+def export_fasta(id_lists, protein_seq_lists, working_folder):
     '''
     Saves the protein sequence into a fasta file
-    :param protein_seq: combination of the six possible protein sequences. Obtained from "nucleotideToAminoacid" function
-    :param fasta_name: first line from the original fasta file
-    :param output_folder: directory where fasta file will be saved
-    :param file_name: name of the input file
+    :param id_lists: list of lists. Contains the sequence identifiers
+    :param protein_seq_lists: list of list. Contains the combination of the six possible protein sequences.
+    Obtained using "nucleotide_to_protein" function
+    :param working_folder: directory where fasta file will be saved
     '''
-    file_content = ""
-    output_file = output_folder + file_name
+    id_lists = correct_format(id_lists)
+    working_file = working_folder + '/' + id_lists[0] + '.fasta'
 
-    file = open(output_file, "w")
-    for i in protein_seq:
-        file_content += i
+    f = open(working_file, "w")
+    position_id_list = 0
+    for sequence_list in protein_seq_lists:
+        file_content = ""
 
-    file_content = fasta_name + '\n' + file_content
-    file.write(file_content)
-    file.close()
+        for sequence in sequence_list:
+            for element in sequence:
+                file_content += str(element)
 
-def accessingNCBI(user_email, genome_id, working_folder, input_folder):
+        f.write(">" + str(id_lists[position_id_list]) + '\n' + str(file_content) + "\n")
+        position_id_list += 1
+
+    f.close()
+
+
+def correct_format(name_list):
     '''
-    Downloads sequences from NCBI in GenBank plain text format and saves it into input folder
-    :param user_email: email that will be used to identify you in
-    :param genome_id: genbank identifier. You can use it instead of the species name
-    :param working_folder: directory where the full project is stored
-    :param input_folder: folder where input files are stored
+    Transforms identifier names to ensure that follows the standard format. Should be a list.
+    :param name_list: file names list to check and correct if necessary
+    :return: correct list with file names
     '''
+    correct_name = []
+    for name in name_list:
+        new_name= str(name).replace("['", "")
+        new_name = new_name.replace("']", "")
+        correct_name.append(new_name)
+    return correct_name
 
-    Entrez.email = user_email  # Always tell NCBI who you are
-    filename = genome_id + ".gb"
-    input_path = '.'
-    print('Downloading...')
 
-    handle = Entrez.efetch(db="nucleotide", id=genome_id, rettype="gb", retmode="text")
-
-    file = open(input_path + working_folder + "\\" + input_folder + "\\" + filename, "w")
-    file.write(handle.read())
-
-    file.close()
-
-# Main function
 if __name__ == '__main__':
 
-    # configuration file
+    # Configuration file
     setting_file = ""
     try:
-        setting_file = open('settings.json', )
-    except:
+        setting_file = open('settings.json')
+    except IOError:
         print('Could not open settings.json')
+    else:
+        # Reads json file
+        json_file = json.load(setting_file)
+        user_email = json_file["user_email"]
+        input_folder = json_file["input_folder"]
+        if not os.path.exists(input_folder):
+            os.mkdir(input_folder)
+        working_folder = json_file["working_folder"]
+        if not os.path.exists(working_folder):
+            os.mkdir(working_folder)
+        accessing_list = json_file["genome_accessions"]
 
-    json_file = json.load(setting_file)  # Read json file
+        # Get NCBI files
+        accessing_ncbi(accessing_list, user_email, input_folder)
 
-    # Get files from NCBI
-    accessing_list = json_file["genome_accessions"]
-    for list in accessing_list:
-        for id in list:
-            accessingNCBI(json_file['user_email'], id, json_file["working_folder"], json_file["input_folder"])
+        # Deletes all content from working folder
+        for file in os.listdir(working_folder):
+            os.remove(working_folder + '/' + file)
 
-    # Read directories and subdirectories
-    input_path = "."
+        # Navigates into the input_folder
+        for file in os.listdir(input_folder):
+            file_extension = path.splitext(file)[1]
 
-    for dir_path, subdir_list, file_list in os.walk(input_path):
-        for fname in file_list:
-            full_path = os.path.join(dir_path, fname)
-
-            with open(full_path, 'r') as reader:
-                if dir_path == input_path + json_file["working_folder"] + "\\" + json_file["input_folder"]:
-                    final_path = dir_path + '\\' + fname
-                    final_output_path = input_path + json_file["working_folder"] + "\\" + json_file["output_folder"] + '\\'
-                    extension = path.splitext(fname)[1]
-
-                    if json_file["analysis_type"] == 'nucleotide':
-                        if extension == '.fasta':
-                            if path.exists(final_path):
-                                print('Reading ' + fname)
-                                RNAseq, identifier_seq, nucleotide_type = fastaToString(final_path)
-                            else:
-                                print('Could not find', fname)
-
-                        if extension == '.gb' or extension == '.gbk':
-                            if path.exists(final_path):
-                                print('Reading ' + fname)
-                                RNAseq, identifier_seq = gbToString(final_path)
-                                nucleotide_type = True
-                            else:
-                                print('Could not find '+ fname)
-
-                        if nucleotide_type:
-                            # translate nucleotide to protein
-                            protein_seq = nucleotideToAminoacid(RNAseq)
-
-                            # Create the fasta file that will contain the resulting protein sequence
-                            exportFasta(protein_seq, identifier_seq, final_output_path, fname)
-                        else:
-                            print(fname + ' does not contain a nucleotide sequence')
-
-                    # Analysis_type = 'protein'
+            # Analysis_type = 'nucleotide'
+            if json_file["analysis_type"] == 'nucleotide':
+                if file_extension == '.fasta':
+                    sequence_id, sequence = read_fasta_file(input_folder, file)
+                    is_nucleotide = is_nucleotide_true(sequence)  # Checks if the fasta file contains a nucleotide sequence
+                    if is_nucleotide:
+                        protein_seq = nucleotide_to_protein(sequence)  # Translate to proteins
+                        export_fasta(sequence_id, protein_seq,
+                                     working_folder)  # Creates a fasta file with the translated sequence
                     else:
-                        if json_file["analysis_type"] == 'protein':
-                            protein_seq = ""
-                            fasta_seq_name = ""
-                            if extension == '.fasta':
-                                if path.exists(full_path):
-                                    print('Reading ' + fname)
-                                    fasta_sequences = SeqIO.parse(open(full_path), 'fasta')
-                                    for fasta in fasta_sequences:
-                                        fasta_seq_name += fasta.id
-                                        protein_seq += fasta.seq # concatenate all protein sequences
+                        print('--> ' + file + ' does not contain a nucleotide sequence')
+                else:
+                    if file_extension == '.gb' or file_extension == '.gbk':
+                        sequence_id, sequence = read_gb_file(input_folder, file)
+                        protein_seq = nucleotide_to_protein(sequence)
+                        export_fasta(sequence_id, protein_seq, working_folder)
+                    else:
+                        if file_extension == '':  # If it finds a folder rather than a file
+                            subdirectory = input_folder + '/' + file
+                            sequence_id = []
+                            protein_seq = []
+                            sequence_list = []
+                            for subdirectory_file in os.listdir(subdirectory):
+                                id, seq = read_gb_file(subdirectory, subdirectory_file)
+                                sequence_id.append(id)
+                                sequence_list.append(seq)  # Concatenates sequences from all the files in the subdirectory
+                            for list in sequence_list:
+                                protein_seq.append(nucleotide_to_protein(list))
 
-                                    is_nucleotide = isNucleotide(protein_seq)
-                                else:
-                                    print('Could not find', fname)
-                            if extension == '.gb' or extension == '.gbk':
-                                protein_list = []
-                                is_nucleotide == False
-                                if path.exists(full_path):
-                                    print('Reading ' + fname)
-                                    try:
-                                        for seq_record in SeqIO.parse(open(full_path, "r"), "genbank"):
-                                            for seq_feature in seq_record.features:
-                                                if seq_feature.type == "CDS":
-                                                    protein_list.append(seq_feature.qualifiers['translation'][0])  # Saves protein sequences
-                                        for i in protein_list:
-                                                protein_seq += i
-
-                                    except:
-                                        print("Genbank file is incomplete")
-                                else:
-                                    print('Could not find the genbank file')
-
-                            if is_nucleotide == False:
-                                exportFasta(protein_seq, fasta_seq_name, final_output_path, fname)
+                            export_fasta(sequence_id, protein_seq,
+                                         working_folder)  # Creates a fasta file with the final translated sequence
                         else:
-                            print('Incorrect analysis_type value in json file')
-                    setting_file.close()
+                            print(file + " is not a genbank or a fasta file")
+
+            # Analysis_type = 'protein'
+            else:
+                if json_file["analysis_type"] == 'protein':
+                    if file_extension == '.fasta':
+                        sequence_id, sequence = read_fasta_file(input_folder, file)
+                        is_nucleotide = is_nucleotide_true(sequence)
+                        if not is_nucleotide:
+                            export_fasta(sequence_id, sequence,
+                                         working_folder)  # Creates a fasta file with the original protein sequence
+                        else:
+                            print('--> ' + file + ' does not contain a protein sequence')
+                    else:
+                        if file_extension == '.gb' or file_extension == '.gbk':
+                            print('Reading ' + file)
+                            sequence_id, sequence = get_protein(input_folder, file)
+                            export_fasta(sequence_id, sequence,
+                                         working_folder)
+                        else:
+                            if file_extension == '':  # If it finds a folder rather than a file
+                                subdirectory = input_folder + '/' + file
+                                sequence_id = []
+                                protein_seq = []
+                                sequence_list = []
+                                for subdirectory_file in os.listdir(subdirectory):
+                                    id, seq = read_gb_file(subdirectory, subdirectory_file)
+                                    sequence_id.append(id)
+                                    sequence_list.append(seq)
+
+                                for list in sequence_list:
+                                    protein_seq.append(nucleotide_to_protein(list))
+
+                                export_fasta(sequence_id, protein_seq,working_folder)
+                            else:
+                                print(file + " is not a genbank or a fasta file")
+                else:
+                    print("Please, indicate a correct analysis type. It should be `nucleotide´ or `protein´")
+
+        setting_file.close()
+
 
 
 

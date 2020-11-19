@@ -3,7 +3,7 @@ Virus phylogeny system.
 
 
 ## The script
-The script ``main.py`` transcribe and translate a nucleotide sequence(DNA) into a sequence of proteins.
+The script ``main.py`` translate a nucleotide sequences(DNA) into a sequence of proteins.
 
 The steps in the script are the following:
 
@@ -13,19 +13,20 @@ The steps in the script are the following:
 
 3. If the analysis_type indicated in the Json file is 'nucleotide':
 
-3.1. Traverses directories and subdirectories until there are no more files to read.
+3.1. Navigate into input files directory until there are no more files to read.
 
-3.1.1. When it finds a fasta file, it checks if the file contains a nucleotide sequence. If not, then returns to the step 2.1.. 
+3.1.1. When it finds a fasta file, it checks if the file contains a nucleotide sequence. If not, then returns to the step 3.1.. 
 
 3.1.2. When it finds a genbank file, it extracts the nucleotide sequence from the file. 
 
-3.1.3. Transcribes and translates the nucleotide sequence into a protein sequence.
+3.1.3. Translates the nucleotide sequence into a protein sequence.
 
 3.1.4. Stores the combined protein sequence in a new fasta file
 
+
 4. If the analysis_type indicated in the Json file is 'protein':
 
-4.1. Traverses directories and subdirectories until there are no more files to read.
+4.1. Navigates into the input files directory until there are no more files to read.
 
 4.1.1. When it finds a fasta file, it checks if the file contains a nucleotide sequence. If so, stores the sequence into a new fasta file. 
 
@@ -62,6 +63,8 @@ Structure of the JSON file:
 
 {
 
+	"user_email": "A.N.Other@example.com",
+
 	"input_folder" : "genome_data",
 
 	"genome_accessions": [["GQ919031.1", "JX182370.1"], ["NC_015464"], ["NC_042011.1"]],
@@ -77,11 +80,13 @@ Structure of the JSON file:
 
 ### Details of the JSON file: 
 
+- "user_email": Email that will be used to identify the user in NCBI
+- "analysis_type": Can be "nucleotide" or "protein"
 - "input_folder": Folder where you can find the fasta or genbank files that the program will read
-- "genome_accessions": List of lists that contains the identifier of the files you want to download from Genbank database. 
 - "working_folder": Path for the directory in which all the other files are located.
 - "output_folder": Folder in which the outgoing files will be located.
-- "analysis_type": Can be "nucleotide" or "protein"
+- "genome_accessions": List of lists that contains the identifier of the files you want to download from Genbank database. 
+
 
 
 ## Other files
@@ -90,15 +95,14 @@ Structure of the JSON file:
 
 - Genbank files: Inside `Inputs` folder. Documents where you can obtained a nucleotide or amino acid sequence, together with other relevant information. 
 
-- ``expectedResult.fasta``: Contains a expected protein sequence. It can be used for testing the translation process. 
-
-- ``proteinSeq.fasta``: Inside `Results` folder. Contains the sequence of amino acids obtained after running this program.
 
 
 ## Folders
 
 - ``Inputs``: Folder to stores the set of files that the program will read 
 
-- ``Results``: Folder to stores the resulting sequences after the translation ends. 
+- ``WorkingFolder``: Folder to stores the resulting sequences after the translation ends. 
+
+- ``Outputs``: Folder that store the final results
 
 
