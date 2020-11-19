@@ -1,12 +1,13 @@
 # 2020
 
 from Bio import SeqIO
-from Bio.Seq import Seq, reverse_complement
+from Bio.Seq import Seq, reverse_complement, UnknownSeq
 from Bio import Entrez
 import json
 import os
 import os.path as path
 import re
+import sys
 
 
 def accessing_ncbi(accessing_list, user_email, input_folder):
@@ -93,8 +94,12 @@ def read_gb_file(input_folder, gb_file):
     record_seq = []
     print('Reading ' + gb_file)
     for records in SeqIO.parse(input_folder + '/' + gb_file, "genbank"):
-        record_id.append(records.id)
-        record_seq.append(records.seq)
+        sequence = records.seq
+        if isinstance(sequence, UnknownSeq):
+            sys.exit("There seems to be no sequence in your GenBank file!")
+        else:
+            record_id.append(records.id)
+            record_seq.append(records.seq)
 
     return record_id, record_seq
 
