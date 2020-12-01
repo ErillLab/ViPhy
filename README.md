@@ -2,8 +2,8 @@
 Virus phylogeny system.
 
 
-## The script
-The script ``main.py`` translate a nucleotide sequences(DNA) into a sequence of proteins.
+## Preprocessing process
+Translates a nucleotide sequences(DNA) into a sequence of proteins.
 
 The steps in the script are the following:
 
@@ -33,6 +33,10 @@ The steps in the script are the following:
 4.1.2. When it finds a genbank file, it extracts the protein sequence from the file. 
 
 4.1.2.1. Stores the combined protein sequence in a new fasta file
+
+
+## Blast
+Creates a Blast database with the fasta files stored in ``WorkingFolder``. Then compares each protein fasta file to each created database.
 
 
 ## Viphy_env.yml
@@ -74,6 +78,9 @@ Structure of the JSON file:
 	"working_folder" : "tmp",
 
 	"analysis_type": "nucleotide",
+
+	"e_value": 0.0001
+
 }
 
 
@@ -86,6 +93,7 @@ Structure of the JSON file:
 - "working_folder": Path for the directory in which all the other files are located.
 - "output_folder": Folder in which the outgoing files will be located.
 - "genome_accessions": List of lists that contains the identifier of the files you want to download from Genbank database. 
+- "e_value": Number of expected hits of similar score that could be found just by chance 
 
 
 
