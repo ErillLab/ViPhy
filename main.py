@@ -1,15 +1,15 @@
 # 2020
 
-from Bio import SeqIO
+from Bio import SeqIO, Entrez, AlignIO
 from Bio.Seq import Seq, reverse_complement, UnknownSeq
-from Bio import Entrez
+from Bio.Blast.Applications import NcbimakeblastdbCommandline, NcbiblastpCommandline
 import json
 import os
-import os.path as path
 import re
 import sys
 import warnings
 warnings.simplefilter("ignore")
+
 
 
 def access_ncbi(accessing_list, user_email, input_folder):
@@ -89,7 +89,7 @@ def read_gb_as_nucleotide(input_folder, gb_file, error_list):
     :param input_folder: folder from where we obtain the genbank file to read
     :param gb_file: file that can store several sequences and extra information
     :param error_list: list of errors that have arisen during the sequence preprocessing
-    :return: Returns a list with the identifier and another list with the nucleotide sequence
+    :return: Returns a list with the identifier, another list with the nucleotide sequence and the list of errors
     '''
     record_id = []
     record_seq = []
@@ -111,7 +111,6 @@ def read_gb_file_as_protein(input_folder, gb_file):
     Reads and extracts protein sequences from a Genbank file
     :param input_folder: folder from where we obtain the genbank file to read
     :param gb_file: file that can store several sequences and extra information, including protein sequences
-    :param error_list: list of errors that have arisen during the sequence preprocessing
     :return: Returns a list of identifiers and another of protein sequences obtained from the genbank file
     '''
     id_list = []
@@ -123,7 +122,6 @@ def read_gb_file_as_protein(input_folder, gb_file):
                 id_list.append(seq_feature.qualifiers['protein_id'][0])
                 protein_list.append(
                     seq_feature.qualifiers['translation'][0])  # Saves protein sequences
-
     return id_list, protein_list
 
 
@@ -192,9 +190,12 @@ def export_fasta(id_lists, protein_seq_lists, working_folder):
     Obtained using "nucleotide_to_protein" function
     :param working_folder: directory where fasta file will be saved
     '''
-    id_lists = correct_format(id_lists)
     if len(id_lists) > 0:
-        working_file = working_folder + '/' + id_lists[0] + '.fasta'
+        str_list = str(id_lists[0])
+        if str_list.count("[") > 0:
+            working_file = working_folder + '/' + id_lists[0][0] + '.fasta'
+        else:
+            working_file = working_folder + '/' + id_lists[0] + '.fasta'
 
         f = open(working_file, "w")
         position_id_list = 0
@@ -207,22 +208,29 @@ def export_fasta(id_lists, protein_seq_lists, working_folder):
 
             f.write(">" + str(id_lists[position_id_list]) + '\n' + str(file_content) + "\n")
             position_id_list += 1
-
         f.close()
 
 
-def correct_format(name_list):
+def export_fasta_as_protein_folder(id_lists, protein_seq_lists, working_folder):
     '''
-    Transforms identifier names to ensure that follows the standard format. Should be a list.
-    :param name_list: file names list to check and correct if necessary
-    :return: correct list with file names
+    Saves protein sequences from different files into a single fasta file. This file shall contain each proteins
+    separated by its own identifier
+    :param id_lists: list of lists. Contains the sequence identifiers
+    :param protein_seq_lists: list of list of lists. Contains a group of proteins.
+    :param working_folder: directory where fasta file will be saved
     '''
-    correct_name = []
-    for name in name_list:
-        new_name= str(name).replace("['", "")
-        new_name = new_name.replace("']", "")
-        correct_name.append(new_name)
-    return correct_name
+    working_file = working_folder + '/' + id_lists[0][0] + '.fasta'
+    f = open(working_file, "w")
+
+    for protein_double_list in protein_seq_lists:
+        list_count = len(protein_double_list)
+        for protein_list in protein_double_list:
+            element_count = len(protein_list)
+        for i in range(0,list_count):
+            for j in range(0, element_count):
+                f.write(">" + str(id_lists[i][j]) + '\n' + str(protein_double_list[i][j]) + "\n")
+    f.close()
+
 
 
 def preprocessing_phase(file_name, error_list):
@@ -245,7 +253,7 @@ def preprocessing_phase(file_name, error_list):
         elif analysis_type == 'protein':
             error_list = preprocessing_as_protein(file_name, file_extension, error_list)
         else:
-            print("Please, indicate a correct analysis type. It should be `nucleotideÂ´ or `proteinÂ´")
+            print("Please, indicate a correct analysis type. It should be 'nucleotide' or 'protein'")
     return error_list
 
 
@@ -310,8 +318,7 @@ def preprocessing_as_protein(file, file_extension, error_list):
     '''
     if file_extension in ['.fasta', '.fas', '.fa']:
         sequence_id, sequence = read_fasta_file(input_folder, file)
-        is_nucleotide = is_nucleotide_true(sequence)
-        if not is_nucleotide:
+        if not is_nucleotide_true(sequence):
             export_fasta(sequence_id, sequence,
                          working_folder)  # Creates a fasta file with the original protein sequence
         else:
@@ -329,17 +336,63 @@ def preprocessing_as_protein(file, file_extension, error_list):
                 protein_seq = []
                 sequence_list = []
                 for subdirectory_file in os.listdir(subdirectory):
-                    id, seq = read_gb_file_as_protein(subdirectory, subdirectory_file)
-                    sequence_id.append(id)
-                    sequence_list.append(seq)
-
-                for list in sequence_list:
-                    protein_seq.append(translate_to_protein(list))
-
-                export_fasta(sequence_id, protein_seq, working_folder)
+                    extension = os.path.splitext(subdirectory_file)[1]
+                    if os.path.isdir(subdirectory + '/' + subdirectory_file):  # If there is a folder
+                        error_list.append([subdirectory_file, "There should not be a folder inside a subdirectory"])
+                    # Checks file extension:
+                    elif extension not in ['.fasta', '.fas', '.fa', '.gb', '.gbk', '.genbank']:
+                        error_list.append([subdirectory_file, "It is not a genbank or fasta file"])
+                    else:
+                        if os.stat(subdirectory + '/' + subdirectory_file).st_size == 0:  # If there is a empty file
+                            error_list.append([subdirectory_file, "It is a empty file"])
+                        else:
+                            id, seq = read_gb_file_as_protein(subdirectory, subdirectory_file)
+                            if not is_nucleotide_true(seq):
+                                sequence_id.append(id)
+                                sequence_list.append(seq)
+                protein_seq.append(sequence_list)
+                export_fasta_as_protein_folder(sequence_id, protein_seq, working_folder)
             else:
                 error_list.append([file, "It is not a genbank or a fasta file."])
     return error_list
+
+
+def display_error_messages(error_list):
+    '''
+    Shows the error messages collected during the preprocessing phase
+    :param error_list: list of errors that have arisen during the sequence preprocessing
+    '''
+    print('\n', "The following files has been ignored:")
+    if len(error_list) > 0:
+        for f in error_list:
+            print("-", f[0], ": ", f[1])  # File name + error
+    else:
+        print("No errors were found")
+
+
+def make_blast_database(working_folder):
+    '''
+    Creates a BLAST database
+    :param working_folder: directory from where we get the fasta files with protein sequences
+    '''
+    for protein_file in os.listdir(working_folder):
+        cmd = NcbimakeblastdbCommandline(input_file=working_folder + '/' + protein_file,
+                                           input_type='fasta', out='Protein_db/', dbtype="prot")
+        os.system(str(cmd))
+
+
+def blastp(working_folder, e_value):
+    '''
+    Compares a protein sequence to a protein database
+    :param working_folder: directory where fasta file were saved after the preprocessing process
+    :param e_value: number of expected hits of similar quality (score) that could be found just by chance
+    :return:
+    '''
+    for seq in os.listdir(working_folder):
+        for db_file in os.listdir(working_folder):
+            cmd = NcbiblastpCommandline(query=working_folder + '/' + seq, db="Protein_db/" + db_file, evalue=e_value,
+                                        out='Protein_db/'+ seq+ "-" + db_file +'.xml')
+            os.system(str(cmd))
 
 
 if __name__ == '__main__':
@@ -366,6 +419,7 @@ if __name__ == '__main__':
     analysis_type = json_file["analysis_type"]
     access_ncbi_list = json_file["genome_accessions"]
     user_email = json_file["user_email"]
+    e_value = json_file["e_value"]
 
     # Get NCBI files
     access_ncbi(access_ncbi_list, user_email, input_folder)
@@ -375,15 +429,19 @@ if __name__ == '__main__':
         os.remove(working_folder + '/' + file)
 
     file_error_list = []
-
     # Preprocessing phase
     for file in os.listdir(input_folder):  # Navigates into the input_folder
         file_error_list = preprocessing_phase(file, file_error_list)
+    # Displays a list of error detected in the preprocessing code
+    display_error_messages(file_error_list)
 
-    # Displays a list of error detected in the code
-    print('\n', "The following files has been ignored:")
-    if len(file_error_list) > 0:
-        for f in file_error_list:
-            print("-", f[0], ": ", f[1])  # File name + error
-    else:
-        print("No errors were found")
+    # Built databases
+    make_blast_database(working_folder)
+
+    print("This might take a few minutes...")
+    # Blastp
+    blastp(working_folder, e_value)
+
+
+
+
