@@ -1,6 +1,6 @@
 # 2020
 
-from Bio import SeqIO, Entrez, AlignIO
+from Bio import SeqIO, Entrez, SearchIO
 from Bio.Seq import Seq, reverse_complement, UnknownSeq
 from Bio.Blast.Applications import NcbimakeblastdbCommandline, NcbiblastpCommandline
 import json
@@ -9,7 +9,7 @@ import re
 import sys
 import warnings
 warnings.simplefilter("ignore")
-
+from Bio.Blast import NCBIXML
 
 
 def access_ncbi(accessing_list, user_email, input_folder):
@@ -232,7 +232,6 @@ def export_fasta_as_protein_folder(id_lists, protein_seq_lists, working_folder):
     f.close()
 
 
-
 def preprocessing_phase(file_name, error_list):
     '''
     Divides the preprocessing phase depending on the analysis type.
@@ -375,10 +374,18 @@ def make_blast_database(working_folder):
     Creates a BLAST database
     :param working_folder: directory from where we get the fasta files with protein sequences
     '''
-    for protein_file in os.listdir(working_folder):
-        cmd = NcbimakeblastdbCommandline(input_file=working_folder + '/' + protein_file,
-                                           input_type='fasta', out='Protein_db/', dbtype="prot")
-        os.system(str(cmd))
+    # Concatenates all the working_files
+    ss = ""
+    for file in os.listdir(working_folder):
+        with open(working_folder + '/' + file) as f:
+            ss += f.read()
+    db_file = "DB.fasta"
+    with open(db_file, 'w') as fW:
+        fW.write(ss)
+
+    protein_file_name = db_file.split(".")  # Removes the file extension
+    cmd = NcbimakeblastdbCommandline(input_file=db_file, out='Protein_db/'+protein_file_name[0], dbtype="prot")
+    os.system(str(cmd))
 
 
 def blastp(working_folder, e_value):
@@ -389,10 +396,85 @@ def blastp(working_folder, e_value):
     :return:
     '''
     for seq in os.listdir(working_folder):
-        for db_file in os.listdir(working_folder):
-            cmd = NcbiblastpCommandline(query=working_folder + '/' + seq, db="Protein_db/" + db_file, evalue=e_value,
-                                        out='Protein_db/'+ seq+ "-" + db_file +'.xml')
-            os.system(str(cmd))
+        seq_file = working_folder + '/' + seq  # File name
+        seq_file2 = seq_file.split(".")  # Removes the file extension from the file name
+        seq_file_name = seq_file2[0].split("/")  # Removes the directory from the file name
+        aligment_file = 'Protein_db/'+ seq_file_name[1]+ "_to_DB.txt"  # Output file name
+        cmd = NcbiblastpCommandline(query=seq_file, db="Protein_db/DB", evalue=e_value, outfmt=6,
+                                    out=aligment_file)
+        os.system(str(cmd))
+        # parse_file(aligment_file)
+
+
+def parse_file(aligment_file):
+    '''
+    Parses blast xml output to get a list of the HSP
+    File content --> query id, subject ids, % identity, % positives, alignment length, mismatches, gap opens,
+    q. start, q. end, s. start, s. end, evalue, bit score
+    :param aligment_file:
+    :return: a list of information of the input file like the HSP
+    '''
+    try:
+        qresults = SearchIO.parse(aligment_file, "blast-tab")
+    except:
+        print("Could not parse " + aligment_file)
+
+    s = ""
+    file_content_list = []
+    element_list = []
+    aux_array = []
+    final_list = []
+
+    with open(aligment_file) as a_file:
+        for line in a_file:
+            file_content_list += list(line)
+        for element in file_content_list:
+            if element != '\n':  # If there is a line break
+                if element == '\t':  # If a word ends
+                    element = str(element).replace('\t', '')
+                    element_list.append(s)
+                    aux_array.append(element_list)
+                    element_list = []
+                    s = ""
+                s += str(element)
+            else:
+                element_list.append(s)
+                aux_array.append(element_list)
+                final_list.append(aux_array)
+                print(final_list)
+                s = ""
+                aux_array = []
+
+    for external_list in final_list:
+        hsp = get_hsp(external_list)
+
+
+def get_hsp(lists):
+    '''
+    Creates a lists of zeros with the same size of the genome. Then replace each hit position with the maximum bit_rate
+    :param lists: list of lists that contains the values extracted from the file read in parse_file funtion
+    :return: Returns a single list with the hsp
+    '''
+
+    length = int(lists[3][0])  # Alignment length
+    start = int(lists[6][0]) # Hit stat
+    end = int(lists[7][0])  # Hit end
+    bit_score = float(lists[11][0])
+
+    hsp_list = [0] * (length -1)
+    count = 0
+
+    while length > count:
+        if count >= start and count <= end:
+            if hsp_list[count-1] > 0:
+                if bit_score > hsp_list:
+                    hsp_list[count-1] = bit_score
+            else:
+                hsp_list[count-1] = bit_score
+        count += 1
+
+    print(hsp_list)
+    return hsp_list
 
 
 if __name__ == '__main__':
@@ -435,12 +517,13 @@ if __name__ == '__main__':
     # Displays a list of error detected in the preprocessing code
     display_error_messages(file_error_list)
 
-    # Built databases
+    # Builts a database
     make_blast_database(working_folder)
 
     print("This might take a few minutes...")
     # Blastp
     blastp(working_folder, e_value)
+
 
 
 
