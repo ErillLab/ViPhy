@@ -36,7 +36,11 @@ The steps in the script are the following:
 
 
 ## Blast
-Creates a Blast database with the fasta files stored in ``WorkingFolder``. Then compares each protein fasta file to each created database.
+During this phase, a database formed by the combination of multiple fasta files will be created and it will be stored in the folder ``dbFolder``.
+
+Then, sequences will be compared in order to find regions of similarity between an input sequence and the database in a matter of seconds. Finally the distance between them will be also calculated. 
+
+The program will use Blastp, a version of Blast that compares two protein sequences, to do this comparison.
 
 
 ## Viphy_env.yml
@@ -101,16 +105,21 @@ Structure of the JSON file:
 
 - Fasta files: Inside `Inputs` folder. Documents that contain a nucleotide or amino acid sequence that the program will read. If the content is a nucleotide sequence, it will be translates into proteins.
 
-- Genbank files: Inside `Inputs` folder. Documents where you can obtained a nucleotide or amino acid sequence, together with other relevant information. 
+- Genbank files: Inside `Inputs` folder. Documents where you can obtain a nucleotide or amino acid sequence, together with other relevant information. 
+
+- DataBase files: Inside `dbFolder` folder. Database files that will appear in this folder once you have created a database.  
+
+- DataBase.fasta: Fasta will formed by the combination of all the files stored in the `WorkingFolder` folder after the preprocessing process. 
 
 
 
 ## Folders
 
-- ``Inputs``: Folder to stores the set of files that the program will read 
+- ``Inputs``: Folder to store the set of files that the program will read.
 
-- ``WorkingFolder``: Folder to stores the resulting sequences after the translation ends. 
+- ``WorkingFolder``: Folder to store the resulting sequences after the translation ends. 
 
-- ``Outputs``: Folder that store the final results
+- ``Outputs``: Folder that stores the final results.
 
+- ``dbFolder``: Folder where the database will be stored after its creation.
 

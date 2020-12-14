@@ -4,11 +4,11 @@ from Bio import SeqIO, Entrez
 from Bio.Seq import Seq, reverse_complement, UnknownSeq
 from Bio.Blast.Applications import NcbimakeblastdbCommandline, NcbiblastpCommandline
 from Bio.Blast import NCBIXML
-import numpy as np
 import json
 import os
 import re
 import sys
+
 import warnings
 
 warnings.simplefilter("ignore")
@@ -195,26 +195,22 @@ def export_fasta(id_lists, protein_seq_lists, working_folder):
     if len(id_lists) > 0:
         str_list = str(id_lists[0])
         if str_list.count("[") > 0:
-            working_file = working_folder + '/' + id_lists[0][0] + '.fasta'
             id_name = id_lists[0][0]
+            working_file = working_folder + '/' + id_name + '.fasta'
         else:
-            working_file = working_folder + '/' + id_lists[0] + '.fasta'
+            id_name = id_lists[0]
+            working_file = working_folder + '/' + id_name + '.fasta'
 
-        f = open(working_file, "w")
-        position_id_list = 0
+        file_content = ""
         for sequence_list in protein_seq_lists:
-            file_content = ""
             for sequence in sequence_list:
                 for element in sequence:
                     file_content += str(element)
 
-            f.write(">" + str(id_lists[position_id_list]) + '\n' + str(file_content) + "\n")
-            position_id_list += 1
+        f = open(working_file, "w")
+        # Writes identifiers and sequences into the fasta file
+        f.write(">" + str(id_name) + '\n' + str(file_content) + "\n")
         f.close()
-
-
-def export_fasta_as_nucleotide_folder(id_lists, protein_seq_lists, working_folder):
-    print("Hello0")
 
 
 def export_fasta_as_protein_folder(id_lists, protein_seq_lists, working_folder):
@@ -225,15 +221,17 @@ def export_fasta_as_protein_folder(id_lists, protein_seq_lists, working_folder):
     :param protein_seq_lists: list of list of lists. Contains a group of proteins.
     :param working_folder: directory where fasta file will be saved
     '''
+    element_count = 0
+
     working_file = working_folder + '/' + id_lists[0][0] + '.fasta'
     f = open(working_file, "w")
-
     for protein_double_list in protein_seq_lists:
         list_count = len(protein_double_list)
         for protein_list in protein_double_list:
             element_count = len(protein_list)
         for i in range(0, list_count):
             for j in range(0, element_count):
+                # Writes identifiers and sequences into the fasta file
                 f.write(">" + str(id_lists[i][j]) + '\n' + str(protein_double_list[i][j]) + "\n")
     f.close()
 
@@ -306,8 +304,7 @@ def preprocessing_as_nucleotide(file, file_extension, error_list):
                             sequence_list.append(seq)  # Concatenates all sequences from the subdirectory files
             for list in sequence_list:
                 protein_seq.append(translate_to_protein(list))
-            protein_seq_lists = []
-            protein_seq_lists.append(protein_seq)
+            protein_seq_lists = [protein_seq]
             export_fasta_as_protein_folder(sequence_id, protein_seq_lists,
                                            working_folder)  # Creates a fasta file with the final translated sequence
         else:
@@ -387,7 +384,6 @@ def make_blast_database(working_folder):
     db_file = "DB.fasta"
     id_list = []
     length_list = []
-    dict = {}
 
     if os.path.exists(db_folder):
         # Deletes old databases before creating a new one
@@ -395,178 +391,139 @@ def make_blast_database(working_folder):
             os.remove(db_folder + '/' + file)
 
     # Concatenates all the working_files
-    id_list, length_list, dict = concatenate_files(working_folder, db_file, id_list, length_list, dict)
+    id_list, length_list = concatenate_files(working_folder, db_file, id_list, length_list)
 
-    # Create a nested dictionary
-    dict = create_dictionary(id_list, length_list, dict)
+    # Create a dictionary
+    d = dictionary_creation(id_list, length_list)
 
     db_name = db_file.split(".")  # Separates the file name and the file extension
     # Creates a blast database
     cmd = NcbimakeblastdbCommandline(input_file=db_file, out=db_folder + '/' + db_name[0], dbtype="prot")
     os.system(str(cmd))
 
-    return id_list, length_list, dict
+    return id_list, length_list, d
 
 
-def concatenate_files(directory, db_file, id_list, length_list, dict):
+def concatenate_files(directory, db_file, id_list, length_list):
     '''
     Concatenates files extracted from a specific folder and saves important information that will be used to create a
-    dictionary and a database.
+    dictionary.
     :param directory: folder from where we get the files we want to concatenate
     :param db_file: name of the file that will contain the information to create the database
     :param id_list: list where the protein names will be stored
     :param length_list: list where the length of the protein sequence will be stored
-    :param dict: empty dictionary
-    :return: Returns the lists with the protein names and length and the current dictionary with external keys
+    :return: Returns two lists. One with the protein names and another with the sequence length
     '''
     db_content = ""
-    for filen in os.listdir(directory):
-        with open(directory + '/' + filen) as f:
+    for working_file in os.listdir(directory):
+        with open(directory + '/' + working_file) as f:
             db_content += f.read()
-        for record in SeqIO.parse(directory + '/' + filen, "fasta"):
-            # Saves information that will be used to create a dictionay
+            db_content += '\n'
+        for record in SeqIO.parse(directory + '/' + working_file, "fasta"):
+            # Saves information that will be used to create a dictionary
             id_list.append(record.id)
             length_list.append(len(record.seq))
-            # Creates the external keys of dictionary
-            dict[str(id_list[-1])] = 0
 
-    # Writes the content that will be used to create the database
+    # Writes the content in a separated file that will be used to create the database
     with open(db_file, 'w') as fW:
         fW.write(db_content)
 
-    return id_list, length_list, dict
+    return id_list, length_list
 
 
-def create_dictionary(id_list, length_list, dictionary):
+def dictionary_creation(id_list, length_list):
     '''
-    Gets a normal dictionary and creates a nested dictionary. It writes a pair key:value with the information extracted
-    from a several fasta files. It will have an external key and then a internal dictionary with the protein names as a
-    internal key and a vector of zeros as a internal value
+    Creates a dictionary. It writes a pair key:value with the information extracted from a several fasta files. It
+    will have a composite key and a vector of zeros as a internal value
     :param id_list: list where the protein names are stored
     :param length_list: list where the length of the protein sequence are stored
-    :param dictionary: current dictionary
-    :return: Returns the current nested dictionary
+    :return: Returns the current dictionary
     '''
-    internal_dict = {}
+    dictionary = {}
     count = 0
-    for external_loop in id_list:
-        for internal_loop in id_list:
-            # Creates a vector of zeros with the same size of the sequence and saves it in the internal dictionary value
-            internal_dict[internal_loop] = np.zeros(length_list[count])
-            count+= 1
-        dictionary[external_loop] = internal_dict
-        internal_dict = {}
-        count = 0
+    for i in id_list:
+        l = [0] * length_list [count]
+        for j in id_list:
+            key = i + '-' + j
+            dictionary[key] = l
+        count += 1
     return dictionary
 
 
-def blastp(working_folder, e_value, id_list, length_list, dict):
+def blastp(working_folder, e_value, dict):
     '''
-    Compares a protein sequence to a protein database
-    :param working_folder: directory where fasta file were saved after the preprocessing process
+    Compares a protein sequence from a fasta file to a protein sequence from the database
+    :param working_folder: directory from where we get the fasta files
     :param e_value: number of expected hits of similar quality (score) that could be found just by chance
-    :param id_list: list of protein names extracted from fasta files
-    :param length_list: list of the length of each protein sequence
     :param dict: dictionary where we will save a vector with the hits position and its scores
-    :return:
     '''
-    vector_list = []
-    internal_range = []
-    external_range = []
-    aux_list = []
-    for i in range(len(length_list)):
-        aux_list.append([])
-    aux_length_list, external_range = internal_dictionary_length(internal_range, external_range, length_list)
-    for seq in os.listdir(working_folder):
-        seq_file = working_folder + '/' + seq  # File name
-        seq_file2 = seq_file.split(".")  # Removes the file extension from the file name
+    for file in os.listdir(working_folder):
+        seq_file_path = working_folder + '/' + file
+        seq_file2 = seq_file_path.split(".")  # Removes the file extension from the file name
         seq_file_name = seq_file2[0].split("/")  # Removes the directory from the file name
-        aligment_file = 'Protein_db/' + seq_file_name[1] + "_to_DB.xml"  # Output file name
-        cmd = NcbiblastpCommandline(query=seq_file, db="Protein_db/DB", evalue=e_value, outfmt=5,
-                                    out=aligment_file)
+        alignment_file = 'Protein_db/' + seq_file_name[1] + "_to_DB.xml"  # Output file name
 
+        # Blatp of the file against the database
+        cmd = NcbiblastpCommandline(query=seq_file_path, db="Protein_db/DB", evalue=e_value, outfmt=5,
+                                    out=alignment_file)
         os.system(str(cmd))
-        vector = []
-        vector = parse_file(aligment_file, vector)
-        vector_list.append(vector)
-        print(vector)
 
-    update_dictionary(vector_list, id_list, length_list, dict)
+        # Gets important information from the database to create a list
+        dict = parse_xml_file(alignment_file, dict)
 
 
-def internal_dictionary_length(specific_range, range_list, length_list):
+def parse_xml_file(alignment_file, dictionary):
     '''
-    Saves the positions of the sequences in the database in a list
-    :param specific_range: list where the positions will be saved
-    :param range_list: list that contains the specific_range list
-    :param length_list: number of files that the database contains
-    :return: Return the current list of the sequences position in the database and a list of lists with the same
-    positions but empty
+    Parses a blast xml file to get important information we will require to make a list with the hits after blast
+    :param alignment_file: file obtained after Blast
+    :param dictionary: current dictionary with the hits positions
+    :return: Return a list with the position of the hits against the database
     '''
-    piece = 0
-    aux_length_list = []
-    aux_length_list.append(0)  # First range start
-    for length in length_list:
-        aux_length_list.append(piece+length)
-        piece += length
-        range_list.append(specific_range)
-    return aux_length_list, range_list
+    result_handle = open(alignment_file, "r")
+    blast_records = NCBIXML.parse(result_handle)  # Parsing blastp object
 
-
-def parse_file(aligment_file, vector):
-    '''
-    Parses a blast xml file to get important information we will requiere to make a list with the hits agter blast
-    :param aligment_file: file obtained after Blast
-    :param vector: input list that will be modified with the hits after blast
-    :return: Return a list with the position of the hits agains the database
-    '''
-    result_handle = open(aligment_file, "r")
-    blast_records = NCBIXML.parse(result_handle)
     for rec in blast_records:
-        length = rec.num_letters_in_database
+        # db_length = rec.num_letters_in_database
+        query = rec.query
+        query_length = rec.query_length
         for alignment in rec.alignments:
+            hit = alignment.hit_def
+            list = [0] * query_length  # List of zeros that will be used to replace an specific value in the dictionary
             for hsp in alignment.hsps:
                 score = hsp.score
-                # evalue = hsp.expect
-                hit_start = hsp.sbjct_start
-                hit_end = hsp.sbjct_end
-                vector = coverage(length, score, hit_start, hit_end, vector)
+                query_start = hsp.query_start
+                query_end = hsp.query_end
+                # Coverage process
+                dictionary = coverage(list, query, hit, query_start, query_end, score, dictionary)
+
     result_handle.close()
-    return vector
+    return dictionary
 
 
-def coverage(length, score, hit_start, hit_end, hit_vector):
+def coverage(list, query, hit, query_start, query_end, score, dict):
     '''
-    Creates a list where the hits will be indicated. If two hit are mapped to the same position, we will take the
-    biggest score
-    :param length: length of the concatenated database sequences
-    :param score: value of the hit
-    :param hit_start: indicates where the hit start
-    :param hit_end: indicates where the hit ends
-    :param hit_vector: list with the same lenght of the database where hits are indicated
-    :return: Returns list with the same lenght of the database. The 0s indicates no hit.
+    Writes in a dictionary where the hits are indicated. If two hit are mapped to the same position, we will only write
+    the biggest score
+    :param list: list of zeros that will be modified with score values
+    :param query: sequence that is compared with the database
+    :param hit: sequence from the database
+    :param query_start: position where the hit start
+    :param query_end: position where the hit ends
+    :param score: value of the comparison of both sequences
+    :param dict: current dictionary
+    :return: Returns the updated dictionary
     '''
-    for i in range(0, length):
-        hit_vector.append(0)  # Creates a list full of 0s
-
-    for i in range(hit_start, hit_end + 1, 1):
-        if 0 < hit_vector[i - 1]:
-            if hit_vector[i - 1] < score:
-                hit_vector[i - 1] = score
+    hit = hit.replace(' ', '')  # Deletes extra spaces in the sequence identifiers
+    # Fills the list in the positions where a hits happens with the score value
+    for i in range(query_start, query_end + 1):
+        if dict[query + '-' + hit][i - 1] == 0:
+            list[i - 1] = score
+        elif dict[query + '-' + hit][i - 1] < score:
+            list[i - 1] = score
         else:
-            hit_vector[i - 1] = score
-    return hit_vector
-
-
-def update_dictionary(vector_list, id_list, length_list, dict):
-    num_vector = 0
-    for external_loop in id_list:
-        position = 0
-        for internal_loop in id_list:
-            dict[external_loop][internal_loop] = vector_list[num_vector][position:(position+length_list[position])]
-            position+= 1
-        num_vector+= 1
-    # print(dict)
+            list[i - 1] = dict[query + '-' + hit][i - 1]
+    dict[query + '-' + hit] = list
+    return dict
 
 
 if __name__ == '__main__':
@@ -611,8 +568,8 @@ if __name__ == '__main__':
     display_error_messages(file_error_list)
 
     # Builts a database
-    id_list, length_list, dict = make_blast_database(working_folder)
+    id_list, length_list, dictionary = make_blast_database(working_folder)
 
     print("This might take a few minutes...")
     # Blastp
-    blastp(working_folder, e_value, id_list, length_list, dict)
+    blastp(working_folder, e_value, dictionary)
