@@ -40,7 +40,7 @@ During this phase, a database formed by the combination of multiple fasta files 
 
 Then, sequences will be compared in order to find regions of similarity between an input sequence and the database in a matter of seconds. Finally the distance between them will be also calculated. 
 
-The program will use Blastp, a version of Blast that compares two protein sequences, to do this comparison.
+The program will use Blastp, a version of Blast that compares two protein sequences, to do this process.
 
 
 ## Viphy_env.yml
