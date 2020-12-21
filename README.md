@@ -38,7 +38,7 @@ The steps in the script are the following:
 ## Blast
 During this phase, a database formed by the combination of multiple fasta files will be created and it will be stored in the folder named ``dbFolder``.
 
-Then, the sequences will be compared in order to find regions of similarity between an input sequence and the database, in a matter of seconds. Finally, the distance between them will be also calculated and saved in a distance matrix.
+Then, the sequences will be compared with each other in order to find regions of similarity between an input sequence and the database, in a matter of seconds. Finally, the distance between them will be also calculated and saved in a distance matrix.
 
 The program will use Blastp, a version of Blast that compares two protein sequences, to do this process.
 
@@ -85,6 +85,8 @@ Structure of the JSON file:
 
 	"e_value": 0.0001
 
+	"distance_function": "d6",
+
 }
 
 
@@ -98,7 +100,7 @@ Structure of the JSON file:
 - "output_folder": Folder in which the outgoing files will be located.
 - "genome_accessions": List of lists that contains the identifier of the files you want to download from Genbank database. 
 - "e_value": Number of expected hits of similar score that could be found just by chance 
-
+- "distance_function": Type of function that will be used to calculate the distance between two sequences. It should be "d0", "d4" or "d6".
 
 
 ## Other files
