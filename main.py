@@ -4,10 +4,13 @@ from Bio import SeqIO, Entrez
 from Bio.Seq import Seq, reverse_complement, UnknownSeq
 from Bio.Blast.Applications import NcbimakeblastdbCommandline, NcbiblastpCommandline
 from Bio.Blast import NCBIXML
+from Bio.Cluster import distancematrix
+
 import json
 import os
 import re
 import sys
+import itertools
 
 import warnings
 
@@ -378,10 +381,10 @@ def make_blast_database(working_folder):
     '''
     Concatenats all the files extracted from the working folder and creates a BLAST database
     :param working_folder: directory from where we get the fasta files with protein sequences
-    :return: Returns the lists with the protein names and the protein length and the current dictionary
+    :return: Returns two created dictionaries
     '''
-    db_folder = "Protein_db"
-    db_file = "DB.fasta"
+    db_folder = "dbFolder"
+    db_file = "DataBase.fasta"
     id_list = []
     length_list = []
 
@@ -393,15 +396,15 @@ def make_blast_database(working_folder):
     # Concatenates all the working_files
     id_list, length_list = concatenate_files(working_folder, db_file, id_list, length_list)
 
-    # Create a dictionary
-    d = dictionary_creation(id_list, length_list)
+    # Create a dictionary to store the HSPs and another dictionary that will store the distance between sequences
+    dict, distance_dictionary = dictionary_creation(id_list, length_list)
 
     db_name = db_file.split(".")  # Separates the file name and the file extension
     # Creates a blast database
     cmd = NcbimakeblastdbCommandline(input_file=db_file, out=db_folder + '/' + db_name[0], dbtype="prot")
     os.system(str(cmd))
 
-    return id_list, length_list, d
+    return dict, distance_dictionary
 
 
 def concatenate_files(directory, db_file, id_list, length_list):
@@ -440,14 +443,17 @@ def dictionary_creation(id_list, length_list):
     :return: Returns the current dictionary
     '''
     dictionary = {}
+    distance_dictionary = {}
     count = 0
     for i in id_list:
-        l = [0] * length_list [count]
+        l = [0] * length_list [count]  # List of zeros
         for j in id_list:
-            key = i + '-' + j
+            key = i + '-' + j  # Dictionary key creation
             dictionary[key] = l
+            # The initial distance value will be 1 to indicates that two sequences are completely different
+            distance_dictionary[key] = 1.0
         count += 1
-    return dictionary
+    return dictionary, distance_dictionary
 
 
 def blastp(working_folder, e_value, dict):
@@ -456,20 +462,24 @@ def blastp(working_folder, e_value, dict):
     :param working_folder: directory from where we get the fasta files
     :param e_value: number of expected hits of similar quality (score) that could be found just by chance
     :param dict: dictionary where we will save a vector with the hits position and its scores
+    :return: Returns a dictionary that contains the coverage vectors
     '''
     for file in os.listdir(working_folder):
         seq_file_path = working_folder + '/' + file
         seq_file2 = seq_file_path.split(".")  # Removes the file extension from the file name
         seq_file_name = seq_file2[0].split("/")  # Removes the directory from the file name
-        alignment_file = 'Protein_db/' + seq_file_name[1] + "_to_DB.xml"  # Output file name
+        alignment_file = 'dbFolder/' + seq_file_name[1] + "_to_DB.xml"  # Output file name
 
         # Blatp of the file against the database
-        cmd = NcbiblastpCommandline(query=seq_file_path, db="Protein_db/DB", evalue=e_value, outfmt=5,
+        cmd = NcbiblastpCommandline(query=seq_file_path, db="dbFolder/DataBase", evalue=e_value, outfmt=5,
                                     out=alignment_file)
         os.system(str(cmd))
 
         # Gets important information from the database to create a list
-        dict = parse_xml_file(alignment_file, dict)
+        dict.update(parse_xml_file(alignment_file, dict))
+
+    return dict
+    # print("Dictionary: ", dict)
 
 
 def parse_xml_file(alignment_file, dictionary):
@@ -477,30 +487,33 @@ def parse_xml_file(alignment_file, dictionary):
     Parses a blast xml file to get important information we will require to make a list with the hits after blast
     :param alignment_file: file obtained after Blast
     :param dictionary: current dictionary with the hits positions
-    :return: Return a list with the position of the hits against the database
+    :return: Returns the current dictionary with the hits positions
     '''
     result_handle = open(alignment_file, "r")
     blast_records = NCBIXML.parse(result_handle)  # Parsing blastp object
 
     for rec in blast_records:
-        # db_length = rec.num_letters_in_database
         query = rec.query
         query_length = rec.query_length
         for alignment in rec.alignments:
             hit = alignment.hit_def
             list = [0] * query_length  # List of zeros that will be used to replace an specific value in the dictionary
+
             for hsp in alignment.hsps:
-                score = hsp.score
+                hit = hit.replace(' ', '')  # Deletes extra spaces in the sequence identifiers
+                identity = hsp.identities  # Identical base pairs
                 query_start = hsp.query_start
                 query_end = hsp.query_end
+
                 # Coverage process
-                dictionary = coverage(list, query, hit, query_start, query_end, score, dictionary)
+                dictionary = coverage(list, query, hit, query_start, query_end, identity, dictionary)
 
     result_handle.close()
+
     return dictionary
 
 
-def coverage(list, query, hit, query_start, query_end, score, dict):
+def coverage(list, query, hit, query_start, query_end, identity, dict):
     '''
     Writes in a dictionary where the hits are indicated. If two hit are mapped to the same position, we will only write
     the biggest score
@@ -509,21 +522,218 @@ def coverage(list, query, hit, query_start, query_end, score, dict):
     :param hit: sequence from the database
     :param query_start: position where the hit start
     :param query_end: position where the hit ends
-    :param score: value of the comparison of both sequences
+    :param identity: value of the comparison of both sequences
     :param dict: current dictionary
-    :return: Returns the updated dictionary
+    :return: Returns the updated dictionary and a boolean that indicates whether or not there is an overlap
     '''
-    hit = hit.replace(' ', '')  # Deletes extra spaces in the sequence identifiers
+    overlap = False
     # Fills the list in the positions where a hits happens with the score value
     for i in range(query_start, query_end + 1):
         if dict[query + '-' + hit][i - 1] == 0:
-            list[i - 1] = score
-        elif dict[query + '-' + hit][i - 1] < score:
-            list[i - 1] = score
+            list[i - 1] = identity
+        elif dict[query + '-' + hit][i - 1] < identity:
+            list[i - 1] = identity
         else:
             list[i - 1] = dict[query + '-' + hit][i - 1]
+            overlap = True
+
     dict[query + '-' + hit] = list
     return dict
+
+
+def get_distance(dictionary, distance_dictionary, distance_function):
+    '''
+    Calculates the distance between two sequences with the formula indicated by the user
+    :param dictionary: dictionary that includes the coverage vectors
+    :param distance_dictionary: dictionary where the distances will be saved
+    :param distance_function: indicates the formula that will be used to get the distance
+    '''
+    if distance_function == 'd0':
+        distance_dictionary = d0(dictionary, distance_dictionary)
+    else:
+        if distance_function == 'd4':
+            distance_dictionary = d4(dictionary, distance_dictionary)
+        elif distance_function == 'd6':
+            distance_dictionary = d6(dictionary, distance_dictionary)
+        else:
+            print("Please, introduce a valid distance function. It can be 'd0', 'd4' or 'd6'.")
+
+    d_matrix = distance_matrix(distance_dictionary)
+    # print("Matrix: ", d_matrix)
+
+
+def d0(dict, distance_dictionary):
+    '''
+    Calculates the distance between two sequences using the HSPs lenght between them and their total length
+    :param dict: Dictionary that contains the coverage vectors
+    :param distance_dictionary: Dictionary that will contain the calculated distances
+    :return: Returns the current distance dictionary
+    '''
+
+    for key in dict.keys():
+        total_length = 0
+        hit_length = 0
+        # Sequences
+        coverage_vector = dict[key]
+
+        # Gets inverted key
+        inverted_key = get_inverted_key(key)
+        inverted_coverage_vector = dict[inverted_key]
+
+        # Hits length
+        hit_length += vector_no_zeros(coverage_vector)
+        hit_length += vector_no_zeros(inverted_coverage_vector)
+
+        # Total length
+        total_length += vector_length(coverage_vector)
+        total_length += vector_length(inverted_coverage_vector)
+
+        # Distance formula
+        distance_dictionary[key] = 1 - (hit_length / total_length)
+    return distance_dictionary
+
+
+def d4(dict, distance_dictionary):
+    '''
+    Calculates the distance between two sequences using the number of identical bases between them and the HSPs length
+    :param dict: Dictionary that contains the coverage vectors
+    :param distance_dictionary: Dictionary that will contain the calculated distances
+    :return: Returns the current distance dictionary
+    '''
+    for key in dict.keys():
+        hit_length = 0
+        sum_identities = 0
+
+        # Sequences
+        coverage_vector = dict[key]
+
+        # Gets inverted key
+        inverted_key = get_inverted_key(key)
+        inverted_coverage_vector = dict[inverted_key]
+
+        # Identities
+        sum_identities += identities(coverage_vector)
+        sum_identities += identities(inverted_coverage_vector)
+
+        # Hits length
+        hit_length += vector_no_zeros(coverage_vector)
+        hit_length += vector_no_zeros(inverted_coverage_vector)
+        if hit_length == 0:
+            hit_length = 1
+        total_identities = (sum_identities / hit_length)
+
+        # Distance formula
+        distance_dictionary[key] = 1 - ((2 * total_identities) / hit_length)
+    return distance_dictionary
+
+
+def d6(dict, distance_dictionary):
+    '''
+    Calculates the distance between two sequences using the number of identical bases between them and the total
+    length of the two sequences
+    :param dict: Dictionary that contains the coverage vectors
+    :param distance_dictionary: Dictionary that will contain the calculated distances
+    :return: Returns the current distance dictionary
+    '''
+    for key in dict.keys():
+        total_length = 0
+        sum_identities = 0
+        dif_zero = 0
+
+        # Sequences
+        coverage_vector = dict[key]
+
+        # Gets inverted key
+        inverted_key = get_inverted_key(key)
+        inverted_coverage_vector = dict[inverted_key]
+
+        # Identities
+        sum_identities += identities(coverage_vector)
+        sum_identities += identities(inverted_coverage_vector)
+        dif_zero += vector_no_zeros(coverage_vector)
+        dif_zero += vector_no_zeros(inverted_coverage_vector)
+        if dif_zero == 0:
+            dif_zero = 1
+        total_identities = (sum_identities / dif_zero)
+
+        # Total length
+        total_length += vector_length(coverage_vector)
+        total_length += vector_length(inverted_coverage_vector)
+
+        # Distance formula
+        distance_dictionary[key] = 1 - ((2 * total_identities) / total_length)
+    return distance_dictionary
+
+
+def get_inverted_key(key):
+    '''
+    Gets the inverted key from an initial key
+    :param key: key that allows us to access to an specific coverage vector
+    :return: Returns the inverted key
+    '''
+    separated_key = key.split('-')
+    inverted_key = separated_key[1] + '-' + separated_key[0]
+    return inverted_key
+
+
+def vector_length(coverage_vector):
+    '''
+    Calculates the length of an array or list
+    :param coverage_vector: Vector that includes all the HSPs between two sequences
+    :return: Returns the total length of the input vector
+    '''
+    length = len(coverage_vector)
+    return length
+
+
+def vector_no_zeros(coverage_vector):
+    '''
+    Calculate the length of the HSPs
+    :param coverage_vector: Vector that includes all the HSPs between two sequences
+    :return: Returns the number of positions that are not equal to zero
+    '''
+    dif_zero = 0
+    for base in coverage_vector:
+        if base != 0:
+            dif_zero += 1
+
+    return dif_zero
+
+
+def identities(coverage_vector):
+    '''
+    Calculates the amount of characters which match exactly between two different sequences
+    :param coverage_vector: Vector that includes all the HSPs between two sequences
+    :return: Returns the number of identities or exact matches between two sequences
+    '''
+    sum_identities = 0
+    for base in coverage_vector:
+        sum_identities += base
+    return sum_identities
+
+
+def distance_matrix(dictionary):
+    '''
+    Creates a matrix with the distances calculated and stored in a dictionary
+    :param dictionary: dictionary where the distance values are saved
+    :return: Returns the final distance matrix created with all the data in the input dictionary
+    '''
+    key_list = []
+    # Creates a list with all the possible keys
+    for key in dictionary.keys():
+        key_parts = key.split('-')
+        if key_parts[0] not in key_list:
+            key_list.append(key_parts[0])
+
+    matrix = []
+    # Create the matrix distance with the calculated distances
+    for first_key in key_list:
+        list = []
+        for second_key in key_list:
+            list.append(dictionary[first_key + '-' + second_key])
+        matrix.append(list)
+
+    return matrix
 
 
 if __name__ == '__main__':
@@ -551,6 +761,7 @@ if __name__ == '__main__':
     access_ncbi_list = json_file["genome_accessions"]
     user_email = json_file["user_email"]
     e_value = json_file["e_value"]
+    distance_function = json_file["distance_function"]
 
     # Get NCBI files
     access_ncbi(access_ncbi_list, user_email, input_folder)
@@ -568,8 +779,11 @@ if __name__ == '__main__':
     display_error_messages(file_error_list)
 
     # Builts a database
-    id_list, length_list, dictionary = make_blast_database(working_folder)
+    dictionary, distance_dictionary = make_blast_database(working_folder)
 
     print("This might take a few minutes...")
     # Blastp
-    blastp(working_folder, e_value, dictionary)
+    dictionary = blastp(working_folder, e_value, dictionary)
+
+    # Distance
+    get_distance(dictionary, distance_dictionary, distance_function)

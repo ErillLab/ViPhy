@@ -36,9 +36,9 @@ The steps in the script are the following:
 
 
 ## Blast
-During this phase, a database formed by the combination of multiple fasta files will be created and it will be stored in the folder ``dbFolder``.
+During this phase, a database formed by the combination of multiple fasta files will be created and it will be stored in the folder named ``dbFolder``.
 
-Then, sequences will be compared in order to find regions of similarity between an input sequence and the database in a matter of seconds. Finally the distance between them will be also calculated. 
+Then, the sequences will be compared in order to find regions of similarity between an input sequence and the database, in a matter of seconds. Finally, the distance between them will be also calculated and saved in a distance matrix.
 
 The program will use Blastp, a version of Blast that compares two protein sequences, to do this process.
 
