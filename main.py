@@ -1,16 +1,19 @@
 # 2020
 
-from Bio import SeqIO, Entrez
+from Bio import SeqIO, Entrez, Phylo
 from Bio.Seq import Seq, reverse_complement, UnknownSeq
 from Bio.Blast.Applications import NcbimakeblastdbCommandline, NcbiblastpCommandline
 from Bio.Blast import NCBIXML
-from Bio.Cluster import distancematrix
+from ete3 import Tree
+from io import StringIO
 
 import json
 import os
 import re
 import sys
-import itertools
+import dendropy
+import csv
+import six
 
 import warnings
 
@@ -446,7 +449,7 @@ def dictionary_creation(id_list, length_list):
     distance_dictionary = {}
     count = 0
     for i in id_list:
-        l = [0] * length_list [count]  # List of zeros
+        l = [0] * length_list[count]  # List of zeros
         for j in id_list:
             key = i + '-' + j  # Dictionary key creation
             dictionary[key] = l
@@ -554,12 +557,18 @@ def get_distance(dictionary, distance_dictionary, distance_function):
         if distance_function == 'd4':
             distance_dictionary = d4(dictionary, distance_dictionary)
         elif distance_function == 'd6':
+            distance_dictionary = d0(dictionary, distance_dictionary)
+            print("D0: ", distance_dictionary)
+            distance_dictionary = d4(dictionary, distance_dictionary)
+            print("D4: ", distance_dictionary)
             distance_dictionary = d6(dictionary, distance_dictionary)
+            print("D6: ", distance_dictionary)
         else:
             print("Please, introduce a valid distance function. It can be 'd0', 'd4' or 'd6'.")
 
-    d_matrix = distance_matrix(distance_dictionary)
+    d_matrix, key_list = distance_matrix(distance_dictionary)
     # print("Matrix: ", d_matrix)
+    return d_matrix, distance_dictionary, key_list
 
 
 def d0(dict, distance_dictionary):
@@ -733,7 +742,52 @@ def distance_matrix(dictionary):
             list.append(dictionary[first_key + '-' + second_key])
         matrix.append(list)
 
-    return matrix
+    return matrix, key_list
+
+
+def write_csv(d_matrix, key_list, distance_file):
+    '''
+    Writes the content of the distance matrix in a file with extension 'csv'
+    :param d_matrix: matrix that contains all the distances between sequences
+    :param key_list: list with the known key of the sequences
+    :param distance_file: name of the file where the content will be written
+    '''
+    row = 0
+    aux_matrix = []
+
+    # Creates a new matrix combining keys and distances
+    k_list = [' '] + key_list
+    aux_matrix.append(k_list)
+    for matrix_list in d_matrix:
+        matrix_list = [key_list[row]] + matrix_list
+        aux_matrix.append(matrix_list)
+        row += 1
+
+    # Writes matrix in a new file
+    with open(distance_file, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerows(aux_matrix)
+
+
+def get_phylogenetic_tree(distance_file):
+    '''
+    Creates a phylogenetic tree from csv file that contained a distance matrix
+    :param distance_file: name of the file where the content was written
+    :return: Returns the created phylogenetic tree
+    '''
+    # Reads the content of a file with csv extension
+    pdm1 = dendropy.PhylogeneticDistanceMatrix.from_csv(src=open(distance_file), delimiter=",")
+    nj_tree = pdm1.nj_tree()
+    tree_data = nj_tree.as_string("newick")  # Phylogenetic tree format
+    separated_tree_data = tree_data.split(" ")
+
+    # Create tree using Biopython
+    tree = Phylo.read(StringIO(separated_tree_data[1]), "newick")
+    print(tree)
+
+    # Creates the tree
+    tree = Tree(separated_tree_data[1])
+    return tree
 
 
 if __name__ == '__main__':
@@ -786,4 +840,15 @@ if __name__ == '__main__':
     dictionary = blastp(working_folder, e_value, dictionary)
 
     # Distance
-    get_distance(dictionary, distance_dictionary, distance_function)
+    d_matrix, distance_dictionary, key_list = get_distance(dictionary, distance_dictionary, distance_function)
+    print(d_matrix)
+
+    # Phylogenetic tree
+    distance_file = "distance_matrix.csv"
+    write_csv(d_matrix, key_list, distance_file)  # External file that contains the distance matrix
+
+    # Create tree
+    tree = get_phylogenetic_tree(distance_file)
+    print("Tree: ", tree)
+
+
