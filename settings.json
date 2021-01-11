@@ -1,14 +1,14 @@
 
 {
-"analysis_type": "nucleotide",
+"analysis_type": "protein",
 "user_email": "A.N.Other@example.com",
 "input_folder" : "Inputs",
 "working_folder" : "WorkingFolder",
 "output_folder" : "Outputs",
-"genome_accessions": [["GQ919031.1", "JX182370.1"], ["NC_015464"], ["NC_042011.1"]],
+"genome_accessions": [[]],
 "e_value": 0.00001,
 "distance_function": "d6",
 "confidence_interval" : "bootstrapping",
-"replicates": 1000
+"replicates": 100
 }
 

@@ -1,19 +1,24 @@
-# 2020
+# 2020/21
 
 from Bio import SeqIO, Entrez, Phylo
 from Bio.Seq import Seq, reverse_complement, UnknownSeq
 from Bio.Blast.Applications import NcbimakeblastdbCommandline, NcbiblastpCommandline
 from Bio.Blast import NCBIXML
-from ete3 import Tree
-from io import StringIO
 
+from Bio.Phylo import TreeConstruction
+from Bio.Phylo.Consensus import *
+from Bio.Phylo.TreeConstruction import DistanceTreeConstructor
+from random import randrange
+
+import numpy as np
 import json
 import os
 import re
 import sys
+
+from io import StringIO
 import dendropy
 import csv
-import six
 
 import warnings
 
@@ -123,11 +128,13 @@ def read_gb_file_as_protein(input_folder, gb_file):
     '''
     id_list = []
     protein_list = []
+    file_name = str(gb_file).split('.')
 
     for seq_record in SeqIO.parse(input_folder + '/' + gb_file, "genbank"):
         for seq_feature in seq_record.features:
             if seq_feature.type == "CDS":
-                id_list.append(seq_feature.qualifiers['protein_id'][0])
+                #id_list.append(seq_feature.qualifiers['protein_id'][0])
+                id_list.append(file_name[0])
                 protein_list.append(
                     seq_feature.qualifiers['translation'][0])  # Saves protein sequences
     return id_list, protein_list
@@ -259,7 +266,7 @@ def preprocessing_phase(file_name, error_list):
         if analysis_type == 'nucleotide':
             error_list = preprocessing_as_nucleotide(file_name, file_extension, error_list)
         # Checks if the analysis type indicated is "protein"
-        elif analysis_type == 'protein':
+        elif analysis_type in ['protein', 'amino acid']:
             error_list = preprocessing_as_protein(file_name, file_extension, error_list)
         else:
             print("Please, indicate a correct analysis type. It should be 'nucleotide' or 'protein'")
@@ -467,6 +474,7 @@ def blastp(working_folder, e_value, dict):
     :param dict: dictionary where we will save a vector with the hits position and its scores
     :return: Returns a dictionary that contains the coverage vectors
     '''
+
     for file in os.listdir(working_folder):
         seq_file_path = working_folder + '/' + file
         seq_file2 = seq_file_path.split(".")  # Removes the file extension from the file name
@@ -482,7 +490,6 @@ def blastp(working_folder, e_value, dict):
         dict.update(parse_xml_file(alignment_file, dict))
 
     return dict
-    # print("Dictionary: ", dict)
 
 
 def parse_xml_file(alignment_file, dictionary):
@@ -508,11 +515,10 @@ def parse_xml_file(alignment_file, dictionary):
                 query_start = hsp.query_start
                 query_end = hsp.query_end
 
-                # Coverage process
+                # Creates coverage vector
                 dictionary = coverage(list, query, hit, query_start, query_end, identity, dictionary)
 
     result_handle.close()
-
     return dictionary
 
 
@@ -529,7 +535,6 @@ def coverage(list, query, hit, query_start, query_end, identity, dict):
     :param dict: current dictionary
     :return: Returns the updated dictionary and a boolean that indicates whether or not there is an overlap
     '''
-    overlap = False
     # Fills the list in the positions where a hits happens with the score value
     for i in range(query_start, query_end + 1):
         if dict[query + '-' + hit][i - 1] == 0:
@@ -538,37 +543,90 @@ def coverage(list, query, hit, query_start, query_end, identity, dict):
             list[i - 1] = identity
         else:
             list[i - 1] = dict[query + '-' + hit][i - 1]
-            overlap = True
 
+    # Bootstrap of the coverage vector
     dict[query + '-' + hit] = list
     return dict
 
 
-def get_distance(dictionary, distance_dictionary, distance_function):
+def get_distance(dictionary, distance_dictionary, distance_function, replicates, output_folder):
     '''
-    Calculates the distance between two sequences with the formula indicated by the user
+    Calculates the distance between two sequences with the formula indicated by the user. It is done as many times as
+    specified by the number of replicates. Once the distance values have been obtained, it is time to create a
+    phylogenetic tree.
     :param dictionary: dictionary that includes the coverage vectors
     :param distance_dictionary: dictionary where the distances will be saved
     :param distance_function: indicates the formula that will be used to get the distance
+    :param replicates: number of replicates of the original coverage vector using bootstrap
+    :param output_folder: name of the file where the consensus tree will be stored
     '''
-    if distance_function == 'd0':
-        distance_dictionary = d0(dictionary, distance_dictionary)
-    else:
-        if distance_function == 'd4':
-            distance_dictionary = d4(dictionary, distance_dictionary)
-        elif distance_function == 'd6':
-            distance_dictionary = d0(dictionary, distance_dictionary)
-            print("D0: ", distance_dictionary)
-            distance_dictionary = d4(dictionary, distance_dictionary)
-            print("D4: ", distance_dictionary)
-            distance_dictionary = d6(dictionary, distance_dictionary)
-            print("D6: ", distance_dictionary)
-        else:
-            print("Please, introduce a valid distance function. It can be 'd0', 'd4' or 'd6'.")
+    count = 0
+    tree_list = []
 
-    d_matrix, key_list = distance_matrix(distance_dictionary)
+    while count <= replicates:
+        if count != 0:
+            dictionary = bootstrap(dictionary)  # Bootstrap to all the coverage vectors
+        if distance_function == 'd0':
+            distance_dictionary = d0(dictionary, distance_dictionary)
+        else:
+            if distance_function == 'd4':
+                distance_dictionary = d4(dictionary, distance_dictionary)
+            elif distance_function == 'd6':
+                distance_dictionary = d6(dictionary, distance_dictionary)
+            else:
+                print("Please, introduce a valid distance function. It can be 'd0', 'd4' or 'd6'.")
+
+        # Creates the distance matrix
+        # d_matrix, key_list = distance_matrix(distance_dictionary, count)
+        # tree_list.append()
+        target_tree = distance_matrix(distance_dictionary, count)
+
+        count += 1
+    #target_tree = list(Phylo.parse('tree_0.nwk', 'newick'))
+
+    # Read trees from files
+    count = 0
+    for file in os.listdir():
+        if os.path.splitext(file)[1] == '.nwk':
+            tree_list.append(Phylo.read(file, 'newick'))
+
+    # Consensus tree
+    consensus_tree(tree_list, output_folder)
+
     # print("Matrix: ", d_matrix)
-    return d_matrix, distance_dictionary, key_list
+
+
+def consensus_tree(trees, output_folder):
+    '''
+    Creates a consensus tree
+    :param target_tree: original tree created without using bootstrap samples
+    :param trees: list of trees created with bootstrap
+    :param output_folder: name of the file where the consensus tree will be stored
+    :return:
+    '''
+    # tree_list = []
+    # tree_list.append(target_tree)
+    # majority_tree = Consensus.get_support(target_tree, trees)
+    majority_tree = majority_consensus(trees, 0.7)
+    # Phylo.draw_ascii(majority_tree)
+    Phylo.write(majority_tree, sys.stdout, "newick")
+    Phylo.write(majority_tree, output_folder + "/consensus_tree.nwk", "newick")
+
+
+def bootstrap(dict):
+    '''
+    Samples a dataset with a specific number of replacements
+    :param dict: dictionary that contains the coverage vectors previously calculated
+    :return Returns a dictionary with the new samples created
+    '''
+    for key in dict.keys():
+        length = len(dict[key])
+        aux_list = []
+        for i in range(0, length):
+            position = randrange(length)
+            aux_list.append(dict[key][position])
+        dict[key] = aux_list
+    return dict
 
 
 def d0(dict, distance_dictionary):
@@ -578,7 +636,6 @@ def d0(dict, distance_dictionary):
     :param distance_dictionary: Dictionary that will contain the calculated distances
     :return: Returns the current distance dictionary
     '''
-
     for key in dict.keys():
         total_length = 0
         hit_length = 0
@@ -664,8 +721,9 @@ def d6(dict, distance_dictionary):
         if dif_zero == 0:
             dif_zero = 1
         total_identities = (sum_identities / dif_zero)
+        total_identities = total_identities 
 
-        # Total length
+        # Calculate the length of the complete vector
         total_length += vector_length(coverage_vector)
         total_length += vector_length(inverted_coverage_vector)
 
@@ -705,7 +763,6 @@ def vector_no_zeros(coverage_vector):
     for base in coverage_vector:
         if base != 0:
             dif_zero += 1
-
     return dif_zero
 
 
@@ -721,10 +778,11 @@ def identities(coverage_vector):
     return sum_identities
 
 
-def distance_matrix(dictionary):
+def distance_matrix(dictionary, replicates):
     '''
     Creates a matrix with the distances calculated and stored in a dictionary
     :param dictionary: dictionary where the distance values are saved
+    :param replicates: current number of the bootstrap replicates
     :return: Returns the final distance matrix created with all the data in the input dictionary
     '''
     key_list = []
@@ -735,14 +793,15 @@ def distance_matrix(dictionary):
             key_list.append(key_parts[0])
 
     matrix = []
-    # Create the matrix distance with the calculated distances
+    # Create the matrix distance with distances calculated before
     for first_key in key_list:
         list = []
         for second_key in key_list:
             list.append(dictionary[first_key + '-' + second_key])
         matrix.append(list)
-
-    return matrix, key_list
+    tree = lower_triangle_matrix(matrix, key_list, replicates)
+    write_csv(matrix, key_list, 'dm.csv')
+    return tree # matrix, key_list
 
 
 def write_csv(d_matrix, key_list, distance_file):
@@ -769,25 +828,74 @@ def write_csv(d_matrix, key_list, distance_file):
         writer.writerows(aux_matrix)
 
 
-def get_phylogenetic_tree(distance_file):
+def lower_triangle_matrix(distance_matrix, key_list, replicates):
+    '''
+    Creates a lower triangular matrix using a pre-calculated distance matrix and a list with all the sequences
+    identifiers that are being compared
+    :param distance_matrix: matrix that contains all distances between sequences pairs
+    :param key_list: list where all the sequences identifiers are stored
+    :param replicates: number that indicates the current bootstrap sample
+    :return:
+    '''
+    distance_matrix = np.array(distance_matrix)
+    num_sequences = len(key_list)  # Number of sequences we are comparing
+
+    # Takes the values of the lower triangular distance matrix and saves in a list
+    array = distance_matrix[np.tril_indices(num_sequences)]
+
+    matrix = []
+    list = []
+    count = 1
+    prev = 0
+    # Converts the list of distances calculated above into a matrix
+    for i in range(0, num_sequences):
+        for j in range(prev, count + prev):
+            list.append(array[j])
+        matrix.append(list)
+        list = []
+        prev = count + prev
+        count += 1
+
+    # Creates a lower triangular matrix object
+    dm = TreeConstruction.DistanceMatrix(key_list, matrix)
+
+    #calculator = DistanceCalculator('identity')
+    constructor = DistanceTreeConstructor()
+    tree = constructor.nj(dm)
+
+    # Saves the tree into a file with newick format
+    Phylo.write(tree, "tree_" + str(replicates) + ".nwk", "newick")
+
+    # Phylo.write(tree, 'Tree_'+ str(replicates) + ".xml", "phyloxml")
+    return tree
+
+
+def get_phylogenetic_tree(distance_file, replicate):
     '''
     Creates a phylogenetic tree from csv file that contained a distance matrix
     :param distance_file: name of the file where the content was written
+    :param replicate: current number of the bootstrap replicate
     :return: Returns the created phylogenetic tree
     '''
     # Reads the content of a file with csv extension
     pdm1 = dendropy.PhylogeneticDistanceMatrix.from_csv(src=open(distance_file), delimiter=",")
+    print(type(pdm1))
     nj_tree = pdm1.nj_tree()
+    print(type(nj_tree))
+    f = open('newick_tree.dnd', 'w')
+    f.write(str(nj_tree))
+    f.close()
+
+    tree = Phylo.read('newick_tree.dnd', 'newick')
+
+    '''
     tree_data = nj_tree.as_string("newick")  # Phylogenetic tree format
-    separated_tree_data = tree_data.split(" ")
+    print(tree_data)
 
-    # Create tree using Biopython
-    tree = Phylo.read(StringIO(separated_tree_data[1]), "newick")
-    print(tree)
-
-    # Creates the tree
-    tree = Tree(separated_tree_data[1])
-    return tree
+    # Write a file with .tre extension
+    tree = dendropy.Tree.get(data=tree_data, schema="newick")
+    tree.write(path="output" + str(replicate) + ".tre", schema="newick")
+    '''
 
 
 if __name__ == '__main__':
@@ -816,13 +924,14 @@ if __name__ == '__main__':
     user_email = json_file["user_email"]
     e_value = json_file["e_value"]
     distance_function = json_file["distance_function"]
+    replicates = json_file["replicates"]
 
     # Get NCBI files
     access_ncbi(access_ncbi_list, user_email, input_folder)
 
     # Deletes all content from working folder
-    # for file in os.listdir(working_folder):
-    #    os.remove(working_folder + '/' + file)
+    #for file in os.listdir(working_folder):
+        #os.remove(working_folder + '/' + file)
 
     file_error_list = []
     # Preprocessing phase
@@ -839,16 +948,9 @@ if __name__ == '__main__':
     # Blastp
     dictionary = blastp(working_folder, e_value, dictionary)
 
-    # Distance
-    d_matrix, distance_dictionary, key_list = get_distance(dictionary, distance_dictionary, distance_function)
-    print(d_matrix)
+    # Distance and phylogenetic trees
+    get_distance(dictionary, distance_dictionary, distance_function, replicates, output_folder)
 
-    # Phylogenetic tree
-    distance_file = "distance_matrix.csv"
-    write_csv(d_matrix, key_list, distance_file)  # External file that contains the distance matrix
 
-    # Create tree
-    tree = get_phylogenetic_tree(distance_file)
-    print("Tree: ", tree)
 
 
