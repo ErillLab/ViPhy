@@ -5,7 +5,7 @@ from Bio.Seq import Seq, reverse_complement, UnknownSeq
 from Bio.Blast.Applications import NcbimakeblastdbCommandline, NcbiblastpCommandline
 from Bio.Blast import NCBIXML
 
-from Bio.Phylo import TreeConstruction
+from Bio.Phylo import TreeConstruction, Consensus
 from Bio.Phylo.Consensus import *
 from Bio.Phylo.TreeConstruction import DistanceTreeConstructor
 from random import randrange
@@ -16,9 +16,8 @@ import os
 import re
 import sys
 
-from io import StringIO
-import dendropy
 import csv
+from io import StringIO
 
 import warnings
 
@@ -91,7 +90,8 @@ def read_fasta_file(input_folder, fasta_file):
     # This loop allows us to concatenate multiple sequences
     for record in SeqIO.parse(input_folder + '/' + fasta_file, "fasta"):
         record_id.append(record.id)
-        record_seq.append(record.seq)
+        seq = record.seq.upper()
+        record_seq.append(seq)
 
     return record_id, record_seq
 
@@ -582,7 +582,7 @@ def get_distance(dictionary, distance_dictionary, distance_function, replicates,
         target_tree = distance_matrix(distance_dictionary, count)
 
         count += 1
-    #target_tree = list(Phylo.parse('tree_0.nwk', 'newick'))
+    # target_tree = list(Phylo.parse('tree_0.nwk', 'newick'))
 
     # Read trees from files
     count = 0
@@ -591,12 +591,12 @@ def get_distance(dictionary, distance_dictionary, distance_function, replicates,
             tree_list.append(Phylo.read(file, 'newick'))
 
     # Consensus tree
-    consensus_tree(tree_list, output_folder)
+    consensus_tree(target_tree, tree_list, output_folder)
 
     # print("Matrix: ", d_matrix)
 
 
-def consensus_tree(trees, output_folder):
+def consensus_tree(target_tree, trees, output_folder):
     '''
     Creates a consensus tree
     :param target_tree: original tree created without using bootstrap samples
@@ -606,8 +606,8 @@ def consensus_tree(trees, output_folder):
     '''
     # tree_list = []
     # tree_list.append(target_tree)
-    # majority_tree = Consensus.get_support(target_tree, trees)
-    majority_tree = majority_consensus(trees, 0.7)
+    majority_tree = Consensus.get_support(target_tree, trees)
+    # majority_tree = majority_consensus(trees, 0.7)
     # Phylo.draw_ascii(majority_tree)
     Phylo.write(majority_tree, sys.stdout, "newick")
     Phylo.write(majority_tree, output_folder + "/consensus_tree.nwk", "newick")
@@ -637,8 +637,6 @@ def d0(dict, distance_dictionary):
     :return: Returns the current distance dictionary
     '''
     for key in dict.keys():
-        total_length = 0
-        hit_length = 0
         # Sequences
         coverage_vector = dict[key]
 
@@ -647,15 +645,16 @@ def d0(dict, distance_dictionary):
         inverted_coverage_vector = dict[inverted_key]
 
         # Hits length
-        hit_length += vector_no_zeros(coverage_vector)
+        hit_length = vector_no_zeros(coverage_vector)
         hit_length += vector_no_zeros(inverted_coverage_vector)
 
         # Total length
-        total_length += vector_length(coverage_vector)
+        total_length = vector_length(coverage_vector)
         total_length += vector_length(inverted_coverage_vector)
 
         # Distance formula
         distance_dictionary[key] = 1 - (hit_length / total_length)
+
     return distance_dictionary
 
 
@@ -667,9 +666,6 @@ def d4(dict, distance_dictionary):
     :return: Returns the current distance dictionary
     '''
     for key in dict.keys():
-        hit_length = 0
-        sum_identities = 0
-
         # Sequences
         coverage_vector = dict[key]
 
@@ -678,15 +674,27 @@ def d4(dict, distance_dictionary):
         inverted_coverage_vector = dict[inverted_key]
 
         # Identities
-        sum_identities += identities(coverage_vector)
-        sum_identities += identities(inverted_coverage_vector)
+        identities1 = identities(coverage_vector)
+        identities2 = identities(inverted_coverage_vector)
 
-        # Hits length
-        hit_length += vector_no_zeros(coverage_vector)
-        hit_length += vector_no_zeros(inverted_coverage_vector)
+        # Values of the coverage vector that are not zero
+        dif_zero1 = vector_no_zeros(coverage_vector)
+        dif_zero2 = vector_no_zeros(inverted_coverage_vector)
+
+        # Hits length or sum of vales that are not zero on the coverage vector
+        hit_length = dif_zero1 + dif_zero2
+
+        if dif_zero1 == 0:
+            dif_zero1 = 1
+        if dif_zero2 == 0:
+            dif_zero2 = 1
         if hit_length == 0:
-            hit_length = 1
-        total_identities = (sum_identities / hit_length)
+            hit_length = 2
+
+        # Calculates the average identity between the coverage vector and its opposite
+        sum_identities = identities1 / dif_zero1
+        inverted_sum_identities = identities2 / dif_zero2
+        total_identities = (sum_identities + inverted_sum_identities) / 2
 
         # Distance formula
         distance_dictionary[key] = 1 - ((2 * total_identities) / hit_length)
@@ -714,14 +722,22 @@ def d6(dict, distance_dictionary):
         inverted_coverage_vector = dict[inverted_key]
 
         # Identities
-        sum_identities += identities(coverage_vector)
-        sum_identities += identities(inverted_coverage_vector)
-        dif_zero += vector_no_zeros(coverage_vector)
-        dif_zero += vector_no_zeros(inverted_coverage_vector)
-        if dif_zero == 0:
-            dif_zero = 1
-        total_identities = (sum_identities / dif_zero)
-        total_identities = total_identities 
+        identities1 = identities(coverage_vector)
+        identities2 = identities(inverted_coverage_vector)
+
+        # Values of the coverage vector that are not zero
+        dif_zero1 = vector_no_zeros(coverage_vector)
+        dif_zero2 = vector_no_zeros(inverted_coverage_vector)
+
+        if dif_zero1 == 0:
+            dif_zero1 = 1
+        if dif_zero2 == 0:
+            dif_zero2 = 1
+
+        # Calculates the average identity between the coverage vector and its opposite
+        sum_identities = identities1 / dif_zero1
+        inverted_sum_identities = identities2 / dif_zero2
+        total_identities = (sum_identities + inverted_sum_identities) * 0.5
 
         # Calculate the length of the complete vector
         total_length += vector_length(coverage_vector)
@@ -729,6 +745,7 @@ def d6(dict, distance_dictionary):
 
         # Distance formula
         distance_dictionary[key] = 1 - ((2 * total_identities) / total_length)
+
     return distance_dictionary
 
 
@@ -763,6 +780,7 @@ def vector_no_zeros(coverage_vector):
     for base in coverage_vector:
         if base != 0:
             dif_zero += 1
+
     return dif_zero
 
 
@@ -773,8 +791,8 @@ def identities(coverage_vector):
     :return: Returns the number of identities or exact matches between two sequences
     '''
     sum_identities = 0
-    for base in coverage_vector:
-        sum_identities += base
+    for value in coverage_vector:
+        sum_identities += value
     return sum_identities
 
 
@@ -800,7 +818,9 @@ def distance_matrix(dictionary, replicates):
             list.append(dictionary[first_key + '-' + second_key])
         matrix.append(list)
     tree = lower_triangle_matrix(matrix, key_list, replicates)
-    write_csv(matrix, key_list, 'dm.csv')
+
+    if replicates == 0:
+        write_csv(matrix, key_list, 'dm0.csv')
     return tree # matrix, key_list
 
 
@@ -828,20 +848,20 @@ def write_csv(d_matrix, key_list, distance_file):
         writer.writerows(aux_matrix)
 
 
-def lower_triangle_matrix(distance_matrix, key_list, replicates):
+def lower_triangle_matrix(d_matrix, key_list, replicates):
     '''
     Creates a lower triangular matrix using a pre-calculated distance matrix and a list with all the sequences
     identifiers that are being compared
-    :param distance_matrix: matrix that contains all distances between sequences pairs
+    :param d_matrix: matrix that contains all distances between sequences pairs
     :param key_list: list where all the sequences identifiers are stored
     :param replicates: number that indicates the current bootstrap sample
     :return:
     '''
-    distance_matrix = np.array(distance_matrix)
+    d_matrix = np.array(d_matrix)
     num_sequences = len(key_list)  # Number of sequences we are comparing
 
     # Takes the values of the lower triangular distance matrix and saves in a list
-    array = distance_matrix[np.tril_indices(num_sequences)]
+    array = d_matrix[np.tril_indices(num_sequences)]
 
     matrix = []
     list = []
@@ -868,34 +888,6 @@ def lower_triangle_matrix(distance_matrix, key_list, replicates):
 
     # Phylo.write(tree, 'Tree_'+ str(replicates) + ".xml", "phyloxml")
     return tree
-
-
-def get_phylogenetic_tree(distance_file, replicate):
-    '''
-    Creates a phylogenetic tree from csv file that contained a distance matrix
-    :param distance_file: name of the file where the content was written
-    :param replicate: current number of the bootstrap replicate
-    :return: Returns the created phylogenetic tree
-    '''
-    # Reads the content of a file with csv extension
-    pdm1 = dendropy.PhylogeneticDistanceMatrix.from_csv(src=open(distance_file), delimiter=",")
-    print(type(pdm1))
-    nj_tree = pdm1.nj_tree()
-    print(type(nj_tree))
-    f = open('newick_tree.dnd', 'w')
-    f.write(str(nj_tree))
-    f.close()
-
-    tree = Phylo.read('newick_tree.dnd', 'newick')
-
-    '''
-    tree_data = nj_tree.as_string("newick")  # Phylogenetic tree format
-    print(tree_data)
-
-    # Write a file with .tre extension
-    tree = dendropy.Tree.get(data=tree_data, schema="newick")
-    tree.write(path="output" + str(replicate) + ".tre", schema="newick")
-    '''
 
 
 if __name__ == '__main__':
@@ -930,8 +922,8 @@ if __name__ == '__main__':
     access_ncbi(access_ncbi_list, user_email, input_folder)
 
     # Deletes all content from working folder
-    #for file in os.listdir(working_folder):
-        #os.remove(working_folder + '/' + file)
+    for file in os.listdir(working_folder):
+        os.remove(working_folder + '/' + file)
 
     file_error_list = []
     # Preprocessing phase
