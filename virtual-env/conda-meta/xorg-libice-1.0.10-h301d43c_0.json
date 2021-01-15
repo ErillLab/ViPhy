@@ -1,0 +1,113 @@
+{
+  "build": "h301d43c_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/win-64",
+  "constrains": [],
+  "depends": [
+    "m2w64-gcc-libs"
+  ],
+  "extracted_package_dir": "C:\\Users\\annaf\\anaconda3\\pkgs\\xorg-libice-1.0.10-h301d43c_0",
+  "features": "",
+  "files": [
+    "Library/bin/msys-ICE-6.dll",
+    "Library/include/X11/ICE/ICE.h",
+    "Library/include/X11/ICE/ICEconn.h",
+    "Library/include/X11/ICE/ICElib.h",
+    "Library/include/X11/ICE/ICEmsg.h",
+    "Library/include/X11/ICE/ICEproto.h",
+    "Library/include/X11/ICE/ICEutil.h",
+    "Library/lib/libICE.dll.a",
+    "Library/lib/pkgconfig/ice.pc",
+    ".nonadmin"
+  ],
+  "fn": "xorg-libice-1.0.10-h301d43c_0.tar.bz2",
+  "license": "MIT",
+  "license_family": "MIT",
+  "link": {
+    "source": "C:\\Users\\annaf\\anaconda3\\pkgs\\xorg-libice-1.0.10-h301d43c_0",
+    "type": 1
+  },
+  "md5": "af6a5dff9a54de2453153443ee114cee",
+  "name": "xorg-libice",
+  "package_tarball_full_path": "C:\\Users\\annaf\\anaconda3\\pkgs\\xorg-libice-1.0.10-h301d43c_0.tar.bz2",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "Library/bin/msys-ICE-6.dll",
+        "file_mode": "binary",
+        "path_type": "hardlink",
+        "prefix_placeholder": "C:/bld/xorg-libice_1563155923888/_h_env",
+        "sha256": "a674036afdb220cf2e277b382fb03c10ba852ba10c9867b4bb643a969458c92c",
+        "sha256_in_prefix": "a674036afdb220cf2e277b382fb03c10ba852ba10c9867b4bb643a969458c92c",
+        "size_in_bytes": 500185
+      },
+      {
+        "_path": "Library/include/X11/ICE/ICE.h",
+        "path_type": "hardlink",
+        "sha256": "02c40f49cc04745ad83619036d8f8356f5933975c54c7a38d090bc21343d39fb",
+        "sha256_in_prefix": "02c40f49cc04745ad83619036d8f8356f5933975c54c7a38d090bc21343d39fb",
+        "size_in_bytes": 2512
+      },
+      {
+        "_path": "Library/include/X11/ICE/ICEconn.h",
+        "path_type": "hardlink",
+        "sha256": "1d6dd9e045cbe8abcfa0ee67dd563b05a89c287f6e7daa8206637b0d15c09727",
+        "sha256_in_prefix": "1d6dd9e045cbe8abcfa0ee67dd563b05a89c287f6e7daa8206637b0d15c09727",
+        "size_in_bytes": 7413
+      },
+      {
+        "_path": "Library/include/X11/ICE/ICElib.h",
+        "path_type": "hardlink",
+        "sha256": "23a5b0fd150903821238902d2f92eaab117e45745b0fbeebdfdca803a74b59fe",
+        "sha256_in_prefix": "23a5b0fd150903821238902d2f92eaab117e45745b0fbeebdfdca803a74b59fe",
+        "size_in_bytes": 9925
+      },
+      {
+        "_path": "Library/include/X11/ICE/ICEmsg.h",
+        "path_type": "hardlink",
+        "sha256": "fce34a6d9cc9b7f78405051b78085c86e69d23c0945036ea42e38d4adc9274b1",
+        "sha256_in_prefix": "fce34a6d9cc9b7f78405051b78085c86e69d23c0945036ea42e38d4adc9274b1",
+        "size_in_bytes": 8206
+      },
+      {
+        "_path": "Library/include/X11/ICE/ICEproto.h",
+        "path_type": "hardlink",
+        "sha256": "62ac0703108f067f3160f875fea16e7f231f3c52de69b569a2b0d1f888840be7",
+        "sha256_in_prefix": "62ac0703108f067f3160f875fea16e7f231f3c52de69b569a2b0d1f888840be7",
+        "size_in_bytes": 4604
+      },
+      {
+        "_path": "Library/include/X11/ICE/ICEutil.h",
+        "path_type": "hardlink",
+        "sha256": "3d85cac1f1787953813dc38f3be72ba099581d2cfefa9f335819777bd22b7d9d",
+        "sha256_in_prefix": "3d85cac1f1787953813dc38f3be72ba099581d2cfefa9f335819777bd22b7d9d",
+        "size_in_bytes": 3154
+      },
+      {
+        "_path": "Library/lib/libICE.dll.a",
+        "path_type": "hardlink",
+        "sha256": "182752f0f0a17ee7dda238d99498b0c300fc16c9cac15ed9680de52abe71d821",
+        "sha256_in_prefix": "182752f0f0a17ee7dda238d99498b0c300fc16c9cac15ed9680de52abe71d821",
+        "size_in_bytes": 85286
+      },
+      {
+        "_path": "Library/lib/pkgconfig/ice.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "C:/bld/xorg-libice_1563155923888/_h_env",
+        "sha256": "f8104570489ba871a2e24994bdf2c87363dfc3ad0bca52a60dbc62fa68716219",
+        "sha256_in_prefix": "c2b4e0683afa52bd4eac06ed97c0aa65a0919ef84e654a7d8b9dcd0b835a4953",
+        "size_in_bytes": 269
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "07e25fde16234793d79c579e5f2fda94c06ab321177b57d874250bbc928b6d25",
+  "size": 184917,
+  "subdir": "win-64",
+  "timestamp": 1563156125191,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/win-64/xorg-libice-1.0.10-h301d43c_0.tar.bz2",
+  "version": "1.0.10"
+}

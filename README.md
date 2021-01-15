@@ -87,6 +87,8 @@ Structure of the JSON file:
 
 	"distance_function": "d6",
 
+	"replicates": 100,
+
 }
 
 
@@ -101,6 +103,7 @@ Structure of the JSON file:
 - "genome_accessions": List of lists that contains the identifier of the files you want to download from Genbank database. 
 - "e_value": Number of expected hits of similar score that could be found just by chance 
 - "distance_function": Type of function that will be used to calculate the distance between two sequences. It should be "d0", "d4" or "d6".
+- "replicates": Number of bootstrap samples 
 
 
 ## Other files
@@ -112,6 +115,8 @@ Structure of the JSON file:
 - DataBase files: Inside `dbFolder` folder. Database files that will appear in this folder once you have created a database.  
 
 - DataBase.fasta: Fasta will formed by the combination of all the files stored in the `WorkingFolder` folder after the preprocessing process. 
+
+- `Consensus_tree.nwk`: Inside `Outputs`. File that contains the final consensus phylogenetic tree in newick format. 
 
 
 

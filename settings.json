@@ -7,7 +7,7 @@
 "output_folder" : "Outputs",
 "genome_accessions": [[]],
 "e_value": 0.00001,
-"distance_function": "d6",
+"distance_function": "d4",
 "confidence_interval" : "bootstrapping",
 "replicates": 100
 }

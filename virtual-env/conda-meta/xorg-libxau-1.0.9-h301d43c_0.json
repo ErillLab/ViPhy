@@ -1,0 +1,71 @@
+{
+  "build": "h301d43c_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/win-64",
+  "constrains": [],
+  "depends": [
+    "m2w64-gcc-libs"
+  ],
+  "extracted_package_dir": "C:\\Users\\annaf\\anaconda3\\pkgs\\xorg-libxau-1.0.9-h301d43c_0",
+  "features": "",
+  "files": [
+    "Library/bin/msys-Xau-6.dll",
+    "Library/include/X11/Xauth.h",
+    "Library/lib/libXau.dll.a",
+    "Library/lib/pkgconfig/xau.pc",
+    ".nonadmin"
+  ],
+  "fn": "xorg-libxau-1.0.9-h301d43c_0.tar.bz2",
+  "license": "MIT",
+  "license_family": "MIT",
+  "link": {
+    "source": "C:\\Users\\annaf\\anaconda3\\pkgs\\xorg-libxau-1.0.9-h301d43c_0",
+    "type": 1
+  },
+  "md5": "245a3357b763b6bf824aac26610a7455",
+  "name": "xorg-libxau",
+  "package_tarball_full_path": "C:\\Users\\annaf\\anaconda3\\pkgs\\xorg-libxau-1.0.9-h301d43c_0.tar.bz2",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "Library/bin/msys-Xau-6.dll",
+        "path_type": "hardlink",
+        "sha256": "6778df16c27634ef1976364867ad1acb529272a1a4be13c9d70d1eadc1e1ac44",
+        "sha256_in_prefix": "6778df16c27634ef1976364867ad1acb529272a1a4be13c9d70d1eadc1e1ac44",
+        "size_in_bytes": 155283
+      },
+      {
+        "_path": "Library/include/X11/Xauth.h",
+        "path_type": "hardlink",
+        "sha256": "5c217ce77f5e1eb12dbf0353bcb7204b2f2a3d5ae586fdb17b3255a056190d02",
+        "sha256_in_prefix": "5c217ce77f5e1eb12dbf0353bcb7204b2f2a3d5ae586fdb17b3255a056190d02",
+        "size_in_bytes": 3817
+      },
+      {
+        "_path": "Library/lib/libXau.dll.a",
+        "path_type": "hardlink",
+        "sha256": "39a0796c928df5ab5d23fc2748ec0f2121e966054404c4cd1affc1f51d69005d",
+        "sha256_in_prefix": "39a0796c928df5ab5d23fc2748ec0f2121e966054404c4cd1affc1f51d69005d",
+        "size_in_bytes": 5750
+      },
+      {
+        "_path": "Library/lib/pkgconfig/xau.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "C:/bld/xorg-libxau_1549908768781/_h_env",
+        "sha256": "14e8bfac8148f1f0b9347e24a01f6d0bf8c403f132d2184f97c4b120891305db",
+        "sha256_in_prefix": "2478d81f881693d81d28ae4e68d48a2c2592c2ac9eb5b74507c48ce32776ebe7",
+        "size_in_bytes": 275
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "43828d205dd9d6ebdd306c722e54f5fc4cf594ccdcf791fec95b13a54ee2b538",
+  "size": 57070,
+  "subdir": "win-64",
+  "timestamp": 1549908996157,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/win-64/xorg-libxau-1.0.9-h301d43c_0.tar.bz2",
+  "version": "1.0.9"
+}

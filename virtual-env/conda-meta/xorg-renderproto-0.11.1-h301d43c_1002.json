@@ -1,0 +1,63 @@
+{
+  "build": "h301d43c_1002",
+  "build_number": 1002,
+  "channel": "https://conda.anaconda.org/conda-forge/win-64",
+  "constrains": [],
+  "depends": [
+    "m2w64-gcc-libs"
+  ],
+  "extracted_package_dir": "C:\\Users\\annaf\\anaconda3\\pkgs\\xorg-renderproto-0.11.1-h301d43c_1002",
+  "features": "",
+  "files": [
+    "Library/include/X11/extensions/render.h",
+    "Library/include/X11/extensions/renderproto.h",
+    "Library/lib/pkgconfig/renderproto.pc",
+    ".nonadmin"
+  ],
+  "fn": "xorg-renderproto-0.11.1-h301d43c_1002.tar.bz2",
+  "license": "MIT",
+  "license_family": "MIT",
+  "link": {
+    "source": "C:\\Users\\annaf\\anaconda3\\pkgs\\xorg-renderproto-0.11.1-h301d43c_1002",
+    "type": 1
+  },
+  "md5": "c5c2f9d5339b1f335db1acf9171f7928",
+  "name": "xorg-renderproto",
+  "package_tarball_full_path": "C:\\Users\\annaf\\anaconda3\\pkgs\\xorg-renderproto-0.11.1-h301d43c_1002.tar.bz2",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "Library/include/X11/extensions/render.h",
+        "path_type": "hardlink",
+        "sha256": "ef3f4aede97e1143656f9169868429d3b180fb8dfb0cbd4aa853e4f9a97a7a52",
+        "sha256_in_prefix": "ef3f4aede97e1143656f9169868429d3b180fb8dfb0cbd4aa853e4f9a97a7a52",
+        "size_in_bytes": 7020
+      },
+      {
+        "_path": "Library/include/X11/extensions/renderproto.h",
+        "path_type": "hardlink",
+        "sha256": "f34edcf5d8f289b810596ba7f646c4d07e14aa50590a11e1462993e5bccd732c",
+        "sha256_in_prefix": "f34edcf5d8f289b810596ba7f646c4d07e14aa50590a11e1462993e5bccd732c",
+        "size_in_bytes": 14081
+      },
+      {
+        "_path": "Library/lib/pkgconfig/renderproto.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "C:/bld/xorg-renderproto_1537023912957/_h_env",
+        "sha256": "5d160e75aa9e851adacc4bd6f6687240b14c9d93f072dd34d131163c3df9f8cb",
+        "sha256_in_prefix": "300721bbdd477d31ef90b799656c62cb6db108622e1d4c24a347d3fc252356b5",
+        "size_in_bytes": 235
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "2adf911c8581ae198cdca6b8b399e76ad45e482777eff3ab220ef0da0d3be337",
+  "size": 9213,
+  "subdir": "win-64",
+  "timestamp": 1537024078765,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/win-64/xorg-renderproto-0.11.1-h301d43c_1002.tar.bz2",
+  "version": "0.11.1"
+}

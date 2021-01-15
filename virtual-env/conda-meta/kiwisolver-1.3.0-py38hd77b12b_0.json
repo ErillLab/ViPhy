@@ -1,0 +1,216 @@
+{
+  "build": "py38hd77b12b_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/win-64",
+  "constrains": [],
+  "depends": [
+    "python >=3.8,<3.9.0a0",
+    "vc >=14.1,<15.0a0",
+    "vs2015_runtime >=14.16.27012,<15.0a0"
+  ],
+  "extracted_package_dir": "C:\\Users\\annaf\\anaconda3\\pkgs\\kiwisolver-1.3.0-py38hd77b12b_0",
+  "features": "",
+  "files": [
+    "Lib/site-packages/cppy/__pycache__/__init__.cpython-38.pyc",
+    "Lib/site-packages/kiwisolver-1.3.0.dist-info/INSTALLER",
+    "Lib/site-packages/kiwisolver-1.3.0.dist-info/LICENSE",
+    "Lib/site-packages/kiwisolver-1.3.0.dist-info/METADATA",
+    "Lib/site-packages/kiwisolver-1.3.0.dist-info/RECORD",
+    "Lib/site-packages/kiwisolver-1.3.0.dist-info/REQUESTED",
+    "Lib/site-packages/kiwisolver-1.3.0.dist-info/WHEEL",
+    "Lib/site-packages/kiwisolver-1.3.0.dist-info/direct_url.json",
+    "Lib/site-packages/kiwisolver-1.3.0.dist-info/top_level.txt",
+    "Lib/site-packages/kiwisolver.cp38-win_amd64.pyd",
+    "Lib/site-packages/wheel/__pycache__/__init__.cpython-38.pyc",
+    "Lib/site-packages/wheel/__pycache__/bdist_wheel.cpython-38.pyc",
+    "Lib/site-packages/wheel/__pycache__/macosx_libfile.cpython-38.pyc",
+    "Lib/site-packages/wheel/__pycache__/metadata.cpython-38.pyc",
+    "Lib/site-packages/wheel/__pycache__/pkginfo.cpython-38.pyc",
+    "Lib/site-packages/wheel/__pycache__/util.cpython-38.pyc",
+    "Lib/site-packages/wheel/__pycache__/wheelfile.cpython-38.pyc",
+    "Lib/site-packages/wheel/cli/__pycache__/__init__.cpython-38.pyc",
+    "Lib/site-packages/wheel/vendored/__pycache__/__init__.cpython-38.pyc",
+    "Lib/site-packages/wheel/vendored/packaging/__pycache__/__init__.cpython-38.pyc",
+    "Lib/site-packages/wheel/vendored/packaging/__pycache__/_typing.cpython-38.pyc",
+    "Lib/site-packages/wheel/vendored/packaging/__pycache__/tags.cpython-38.pyc",
+    ".nonadmin"
+  ],
+  "fn": "kiwisolver-1.3.0-py38hd77b12b_0.conda",
+  "legacy_bz2_md5": "0fbfe5881e7bbd76ecee7e14af5c14c7",
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "link": {
+    "source": "C:\\Users\\annaf\\anaconda3\\pkgs\\kiwisolver-1.3.0-py38hd77b12b_0",
+    "type": 1
+  },
+  "md5": "a1f80836fd35dc94f5a4748bc58cbf69",
+  "name": "kiwisolver",
+  "package_tarball_full_path": "C:\\Users\\annaf\\anaconda3\\pkgs\\kiwisolver-1.3.0-py38hd77b12b_0.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "Lib/site-packages/cppy/__pycache__/__init__.cpython-38.pyc",
+        "path_type": "hardlink",
+        "sha256": "219e64830b2deb8c3b88b279c65890671e3bec9d25808cec7a59eed8bc1dd2f5",
+        "sha256_in_prefix": "219e64830b2deb8c3b88b279c65890671e3bec9d25808cec7a59eed8bc1dd2f5",
+        "size_in_bytes": 488
+      },
+      {
+        "_path": "Lib/site-packages/kiwisolver-1.3.0.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "sha256_in_prefix": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "Lib/site-packages/kiwisolver-1.3.0.dist-info/LICENSE",
+        "path_type": "hardlink",
+        "sha256": "26da8d49744796f2601fb5fe9e5d8b9e8102064ca60a8dc1825b6177cb05450c",
+        "sha256_in_prefix": "26da8d49744796f2601fb5fe9e5d8b9e8102064ca60a8dc1825b6177cb05450c",
+        "size_in_bytes": 3279
+      },
+      {
+        "_path": "Lib/site-packages/kiwisolver-1.3.0.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "9af5dab7b28586dffce03b9786ecd92f1b64ab4bbdb1a9e479bd537e336254c4",
+        "sha256_in_prefix": "9af5dab7b28586dffce03b9786ecd92f1b64ab4bbdb1a9e479bd537e336254c4",
+        "size_in_bytes": 1927
+      },
+      {
+        "_path": "Lib/site-packages/kiwisolver-1.3.0.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "ac19e2583d79b66b7c92967c90cea22b1f0416584f642485e0b7913392108cc9",
+        "sha256_in_prefix": "ac19e2583d79b66b7c92967c90cea22b1f0416584f642485e0b7913392108cc9",
+        "size_in_bytes": 776
+      },
+      {
+        "_path": "Lib/site-packages/kiwisolver-1.3.0.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "Lib/site-packages/kiwisolver-1.3.0.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "f4c7542343b3c2361a1e5de35a52850c827930504f8f0a6936058db5ec67b6a8",
+        "sha256_in_prefix": "f4c7542343b3c2361a1e5de35a52850c827930504f8f0a6936058db5ec67b6a8",
+        "size_in_bytes": 105
+      },
+      {
+        "_path": "Lib/site-packages/kiwisolver-1.3.0.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "dd37944185ece84e58fdb27c7a374570da325d391d03580679b777770a264992",
+        "sha256_in_prefix": "dd37944185ece84e58fdb27c7a374570da325d391d03580679b777770a264992",
+        "size_in_bytes": 70
+      },
+      {
+        "_path": "Lib/site-packages/kiwisolver-1.3.0.dist-info/top_level.txt",
+        "path_type": "hardlink",
+        "sha256": "c6ac168fba121e5a488dcc3640c25bf29b9314f7630c13bbf00669f608d387d7",
+        "sha256_in_prefix": "c6ac168fba121e5a488dcc3640c25bf29b9314f7630c13bbf00669f608d387d7",
+        "size_in_bytes": 11
+      },
+      {
+        "_path": "Lib/site-packages/kiwisolver.cp38-win_amd64.pyd",
+        "path_type": "hardlink",
+        "sha256": "98d71d474cdbe9818de57b923c6e5790c8ab95a722eb3663707bb8ffdf3e7920",
+        "sha256_in_prefix": "98d71d474cdbe9818de57b923c6e5790c8ab95a722eb3663707bb8ffdf3e7920",
+        "size_in_bytes": 124416
+      },
+      {
+        "_path": "Lib/site-packages/wheel/__pycache__/__init__.cpython-38.pyc",
+        "path_type": "hardlink",
+        "sha256": "204aadec53193a660f3cd00787ef70b485bf6faaa2b73b2d1f851166b3aaba2e",
+        "sha256_in_prefix": "204aadec53193a660f3cd00787ef70b485bf6faaa2b73b2d1f851166b3aaba2e",
+        "size_in_bytes": 186
+      },
+      {
+        "_path": "Lib/site-packages/wheel/__pycache__/bdist_wheel.cpython-38.pyc",
+        "path_type": "hardlink",
+        "sha256": "e5f60c4ca9cbc42ad6a3744b61f6940a7086ac5e4d5f07bc8da027143231991a",
+        "sha256_in_prefix": "e5f60c4ca9cbc42ad6a3744b61f6940a7086ac5e4d5f07bc8da027143231991a",
+        "size_in_bytes": 12765
+      },
+      {
+        "_path": "Lib/site-packages/wheel/__pycache__/macosx_libfile.cpython-38.pyc",
+        "path_type": "hardlink",
+        "sha256": "3224f51f6d7f99e5fde667e52eb8fdbd78c5c5de00ee78fbe483b45034bd767d",
+        "sha256_in_prefix": "3224f51f6d7f99e5fde667e52eb8fdbd78c5c5de00ee78fbe483b45034bd767d",
+        "size_in_bytes": 9667
+      },
+      {
+        "_path": "Lib/site-packages/wheel/__pycache__/metadata.cpython-38.pyc",
+        "path_type": "hardlink",
+        "sha256": "17c7d15d2c0e45a004776ee8af93d4add78147d45b6ab1a38d3da5ccddb097e6",
+        "sha256_in_prefix": "17c7d15d2c0e45a004776ee8af93d4add78147d45b6ab1a38d3da5ccddb097e6",
+        "size_in_bytes": 3601
+      },
+      {
+        "_path": "Lib/site-packages/wheel/__pycache__/pkginfo.cpython-38.pyc",
+        "path_type": "hardlink",
+        "sha256": "3fa6655427a341e27490b363eb36cb8aed019d5275c685ef28846bd608e65cf2",
+        "sha256_in_prefix": "3fa6655427a341e27490b363eb36cb8aed019d5275c685ef28846bd608e65cf2",
+        "size_in_bytes": 1547
+      },
+      {
+        "_path": "Lib/site-packages/wheel/__pycache__/util.cpython-38.pyc",
+        "path_type": "hardlink",
+        "sha256": "01805e3f2c91b45cb250d11a0f1322fa5a231f84952e2eb2a25271e7c8941583",
+        "sha256_in_prefix": "01805e3f2c91b45cb250d11a0f1322fa5a231f84952e2eb2a25271e7c8941583",
+        "size_in_bytes": 1300
+      },
+      {
+        "_path": "Lib/site-packages/wheel/__pycache__/wheelfile.cpython-38.pyc",
+        "path_type": "hardlink",
+        "sha256": "8dd0e5de4646aaeb57b8c2772be1f7f18608b0b060767659128c02160c83ba82",
+        "sha256_in_prefix": "8dd0e5de4646aaeb57b8c2772be1f7f18608b0b060767659128c02160c83ba82",
+        "size_in_bytes": 5536
+      },
+      {
+        "_path": "Lib/site-packages/wheel/cli/__pycache__/__init__.cpython-38.pyc",
+        "path_type": "hardlink",
+        "sha256": "769142413948faccbe3c5f7204ad05bccb3c287ab4a41afc63edcfc8da27fb3f",
+        "sha256_in_prefix": "769142413948faccbe3c5f7204ad05bccb3c287ab4a41afc63edcfc8da27fb3f",
+        "size_in_bytes": 3070
+      },
+      {
+        "_path": "Lib/site-packages/wheel/vendored/__pycache__/__init__.cpython-38.pyc",
+        "path_type": "hardlink",
+        "sha256": "230a5b6b8ae6137d34012cbd354a531c520f3a40c2c93dc767c4f48ec37f355b",
+        "sha256_in_prefix": "230a5b6b8ae6137d34012cbd354a531c520f3a40c2c93dc767c4f48ec37f355b",
+        "size_in_bytes": 173
+      },
+      {
+        "_path": "Lib/site-packages/wheel/vendored/packaging/__pycache__/__init__.cpython-38.pyc",
+        "path_type": "hardlink",
+        "sha256": "ca83c5dcf0962791ab2ac41a4853daa4f995535f6e141867086f5eac90a86e42",
+        "sha256_in_prefix": "ca83c5dcf0962791ab2ac41a4853daa4f995535f6e141867086f5eac90a86e42",
+        "size_in_bytes": 183
+      },
+      {
+        "_path": "Lib/site-packages/wheel/vendored/packaging/__pycache__/_typing.cpython-38.pyc",
+        "path_type": "hardlink",
+        "sha256": "2a6d1cf6d044abe0ac6422eda3f727eba4c21a1ecfa4acb795b2237518a281bd",
+        "sha256_in_prefix": "2a6d1cf6d044abe0ac6422eda3f727eba4c21a1ecfa4acb795b2237518a281bd",
+        "size_in_bytes": 1478
+      },
+      {
+        "_path": "Lib/site-packages/wheel/vendored/packaging/__pycache__/tags.cpython-38.pyc",
+        "path_type": "hardlink",
+        "sha256": "7bd6f603e3e92711c1bc052189ce0ee8769aa6bd9d546918d5cb5fd3d2fc0779",
+        "sha256_in_prefix": "7bd6f603e3e92711c1bc052189ce0ee8769aa6bd9d546918d5cb5fd3d2fc0779",
+        "size_in_bytes": 17248
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "eb0e049fd136db1b0e030d3217461ab45e3f1df3ff088b1ee21972f1acd95608",
+  "size": 79410,
+  "subdir": "win-64",
+  "timestamp": 1604014815122,
+  "track_features": "",
+  "url": "https://repo.anaconda.com/pkgs/main/win-64/kiwisolver-1.3.0-py38hd77b12b_0.conda",
+  "version": "1.3.0"
+}
