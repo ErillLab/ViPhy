@@ -55,7 +55,11 @@ At the end, a consensus tree will be created with all the samples obtained and s
 
 Conda environment created using Phyton38 that contains a specific collection of conda packages installed to ensure the smooth running of the program.
 
-To activate the `viphy_env.yml` environment:
+To create the environment from `viphy-env.yml` file:
+
+	$ conda env create -f viphy-env.yml
+
+To activate the `viphy-env.yml` environment:
 
 	$ conda activate viphy-env
 
@@ -68,6 +72,11 @@ To deactivate the conda environment:
 
 - Python 3.8.3
 - Biopython 1.78
+
+If you are using linux you may require other libraries. So please use the following commands:
+	
+	$ sudo chmod +x linux_requirements.txt
+	$ sudo pip install -r requirements.txt
 
 
 ## Settings.json

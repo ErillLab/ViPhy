@@ -19,9 +19,6 @@ dependencies:
   - setuptools=51.1.2
   - six=1.15.0
   - sqlite=3.33.0
-  - vc=14.2
-  - vs2015_runtime=14.27.29016
   - wheel=0.36.2
-  - wincertstore=0.2
   - zlib=1.2.11
 
