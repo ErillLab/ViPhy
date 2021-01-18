@@ -16,7 +16,6 @@ import os
 import re
 import sys
 
-import csv
 from io import StringIO
 
 import warnings
@@ -466,7 +465,7 @@ def dictionary_creation(id_list, length_list):
     return dictionary, distance_dictionary
 
 
-def blastp(working_folder, e_value, dict):
+def coverage_vector(working_folder, e_value, dict):
     '''
     Compares a protein sequence from a fasta file to a protein sequence from the database
     :param working_folder: directory from where we get the fasta files
@@ -549,7 +548,7 @@ def coverage(list, query, hit, query_start, query_end, identity, dict):
     return dict
 
 
-def get_distance(dictionary, distance_dictionary, distance_function, replicates, output_folder):
+def get_newick_tree(dictionary, distance_dictionary, distance_function, replicates, output_folder):
     '''
     Calculates the distance between two sequences with the formula indicated by the user. It is done as many times as
     specified by the number of replicates. Once the distance values have been obtained, it is time to create a
@@ -559,6 +558,7 @@ def get_distance(dictionary, distance_dictionary, distance_function, replicates,
     :param distance_function: indicates the formula that will be used to get the distance
     :param replicates: number of replicates of the original coverage vector using bootstrap
     :param output_folder: name of the file where the consensus tree will be stored
+    :return: Returns a tree following the newick format
     '''
     count = 0
     tree_list = []
@@ -579,24 +579,13 @@ def get_distance(dictionary, distance_dictionary, distance_function, replicates,
         # Creates the distance matrix
         # d_matrix, key_list = distance_matrix(distance_dictionary, count)
         # tree_list.append()
-        target_tree = distance_matrix(distance_dictionary, count)
-
+        newick_tree = distance_matrix(distance_dictionary, count)
         count += 1
-    # target_tree = list(Phylo.parse('tree_0.nwk', 'newick'))
-
-    # Read trees from files
-    count = 0
-    for file in os.listdir():
-        if os.path.splitext(file)[1] == '.nwk':
-            tree_list.append(Phylo.read(file, 'newick'))
-
-    # Consensus tree
-    consensus_tree(target_tree, tree_list, output_folder)
-
-    # print("Matrix: ", d_matrix)
+        # target_tree = list(Phylo.parse('tree_0.nwk', 'newick'))
+    return newick_tree
 
 
-def consensus_tree(target_tree, trees, output_folder):
+def consensus_tree(original_tree, trees, output_folder):
     '''
     Creates a consensus tree
     :param target_tree: original tree created without using bootstrap samples
@@ -606,7 +595,7 @@ def consensus_tree(target_tree, trees, output_folder):
     '''
     # tree_list = []
     # tree_list.append(target_tree)
-    majority_tree = Consensus.get_support(target_tree, trees)
+    majority_tree = Consensus.get_support(original_tree, trees)
     # majority_tree = majority_consensus(trees, 0.7)
     # Phylo.draw_ascii(majority_tree)
     Phylo.write(majority_tree, sys.stdout, "newick")
@@ -689,7 +678,7 @@ def d4(dict, distance_dictionary):
         if dif_zero2 == 0:
             dif_zero2 = 1
         if hit_length == 0:
-            hit_length = 2
+            hit_length = 1
 
         # Calculates the average identity between the coverage vector and its opposite
         sum_identities = identities1 / dif_zero1
@@ -820,32 +809,37 @@ def distance_matrix(dictionary, replicates):
     tree = lower_triangle_matrix(matrix, key_list, replicates)
 
     if replicates == 0:
-        write_csv(matrix, key_list, 'dm0.csv')
-    return tree # matrix, key_list
+        file_name = 'original_distance_matrix.txt'
+        phylip_file(key_list, matrix, file_name)
+    else:
+        file_name = 'distance_matrix_all.txt'
+        phylip_file(key_list, matrix, file_name)
+    return tree  # matrix, key_list
 
 
-def write_csv(d_matrix, key_list, distance_file):
+def phylip_file(key_list, d_matrix, file_name):
     '''
-    Writes the content of the distance matrix in a file with extension 'csv'
-    :param d_matrix: matrix that contains all the distances between sequences
-    :param key_list: list with the known key of the sequences
-    :param distance_file: name of the file where the content will be written
+    Writes in a file the values of a distance matrix following the phylip format
+    :param key_list:
+    :param d_matrix:
+    :param file_name:
     '''
-    row = 0
-    aux_matrix = []
+    line = ""
+    count = 0
+    length = len(key_list)
 
-    # Creates a new matrix combining keys and distances
-    k_list = [' '] + key_list
-    aux_matrix.append(k_list)
-    for matrix_list in d_matrix:
-        matrix_list = [key_list[row]] + matrix_list
-        aux_matrix.append(matrix_list)
-        row += 1
-
-    # Writes matrix in a new file
-    with open(distance_file, 'w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerows(aux_matrix)
+    # Opens a file and writes the content of the distance matrix
+    with open(output_folder + '/' + file_name, 'a') as f:
+        f.write('{}\n'.format(str(length)))  # Writes the number of sequences analyzed
+        for i in key_list:
+            for j in range(length):
+                line += str(d_matrix[count][j])
+                line += "  "
+            line += '\n'
+            f.write('{} {}'.format(i, line))  # Writes the sequences and the distances of each comparison
+            count += 1
+            line = ""
+        f.write('\n')
 
 
 def lower_triangle_matrix(d_matrix, key_list, replicates):
@@ -857,16 +851,17 @@ def lower_triangle_matrix(d_matrix, key_list, replicates):
     :param replicates: number that indicates the current bootstrap sample
     :return:
     '''
+    matrix = []
+    list = []
+    count = 1
+    prev = 0
+
     d_matrix = np.array(d_matrix)
     num_sequences = len(key_list)  # Number of sequences we are comparing
 
     # Takes the values of the lower triangular distance matrix and saves in a list
     array = d_matrix[np.tril_indices(num_sequences)]
 
-    matrix = []
-    list = []
-    count = 1
-    prev = 0
     # Converts the list of distances calculated above into a matrix
     for i in range(0, num_sequences):
         for j in range(prev, count + prev):
@@ -883,8 +878,11 @@ def lower_triangle_matrix(d_matrix, key_list, replicates):
     constructor = DistanceTreeConstructor()
     tree = constructor.nj(dm)
 
-    # Saves the tree into a file with newick format
-    Phylo.write(tree, "tree_" + str(replicates) + ".nwk", "newick")
+    # Saves the original tree into a file with newick format
+    if replicates == 0:
+        Phylo.write(tree, output_folder + "/original_tree.nwk", "newick")
+    else:
+        Phylo.write(tree, working_folder + "/tree_" + str(replicates) + ".nwk", "newick")
 
     # Phylo.write(tree, 'Tree_'+ str(replicates) + ".xml", "phyloxml")
     return tree
@@ -921,9 +919,13 @@ if __name__ == '__main__':
     # Get NCBI files
     access_ncbi(access_ncbi_list, user_email, input_folder)
 
-    # Deletes all content from working folder
+    # Deletes all files from working folder
     for file in os.listdir(working_folder):
         os.remove(working_folder + '/' + file)
+
+    # Deletes all files from output folder
+    for file in os.listdir(output_folder):
+        os.remove(output_folder + '/' + file)
 
     file_error_list = []
     # Preprocessing phase
@@ -937,12 +939,20 @@ if __name__ == '__main__':
     dictionary, distance_dictionary = make_blast_database(working_folder)
 
     print("This might take a few minutes...")
-    # Blastp
-    dictionary = blastp(working_folder, e_value, dictionary)
+    # Uses Blastp to the coverage_vector for each sequence pair
+    dictionary = coverage_vector(working_folder, e_value, dictionary)
 
     # Distance and phylogenetic trees
-    get_distance(dictionary, distance_dictionary, distance_function, replicates, output_folder)
+    newick_tree = get_newick_tree(dictionary, distance_dictionary, distance_function, replicates, output_folder)
 
+    tree_list = []
 
+    # Read trees from files
+    count = 0
+    for file in os.listdir(working_folder):
+        if os.path.splitext(working_folder + '/' + file)[1] == '.nwk':
+            tree_list.append(Phylo.read(working_folder + '/' + file, 'newick'))
 
+    # Consensus tree
+    consensus_tree(newick_tree, tree_list, output_folder)
 

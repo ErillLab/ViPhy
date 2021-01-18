@@ -35,12 +35,20 @@ The steps in the script are the following:
 4.1.2.1. Stores the combined protein sequence in a new fasta file
 
 
-## Blast
+## Sequence alignment
 During this phase, a database formed by the combination of multiple fasta files will be created and it will be stored in the folder named ``dbFolder``.
 
-Then, the sequences will be compared with each other in order to find regions of similarity between an input sequence and the database, in a matter of seconds. Finally, the distance between them will be also calculated and saved in a distance matrix.
+Then, the sequences will be compared with each other in order to find regions of similarity between an input sequence and the database, in a matter of seconds. More specifically, the program will use Blastp, a version of Blast that compares two protein sequences.
 
-The program will use Blastp, a version of Blast that compares two protein sequences, to do this process.
+Finally, the distance between them will be also calculated and saved in a distance matrix. This matrix will be saved in the ``Outputs`` folder following the phylip format.
+
+
+## Phylogenetic trees
+Once the distance matrix has been obtained, the code will generate a phylogenetic tree using the newick format and it will be stored in the ``Outputs`` folder.
+
+After this, if the user wishes it, bootstrap will be used to create sub-samples from which the parameters of the model are estimated repeated times.
+
+At the end, a consensus tree will be created with all the samples obtained.
 
 
 ## Viphy_env.yml
@@ -49,7 +57,7 @@ Conda environment created using Phyton38 that contains a specific collection of 
 
 To activate the `viphy_env.yml` environment:
 
-	$ conda activate virtual-env
+	$ conda activate viphy-env
 
 To deactivate the conda environment:
 
@@ -114,10 +122,15 @@ Structure of the JSON file:
 
 - DataBase files: Inside `dbFolder` folder. Database files that will appear in this folder once you have created a database.  
 
-- DataBase.fasta: Fasta will formed by the combination of all the files stored in the `WorkingFolder` folder after the preprocessing process. 
+- DataBase.fasta: File that will formed by the combination of all the files stored in the `WorkingFolder` folder after the preprocessing process. 
+
+- `Original_tree.nwk`: Inside `Outputs`. File that contains the original phylogenetic tree, in other words, the phylogenetic tree before using bootstrap.
 
 - `Consensus_tree.nwk`: Inside `Outputs`. File that contains the final consensus phylogenetic tree in newick format. 
 
+- `Original distance matrix.txt`: Inside `Outputs` folder. This file contains the distance matrix calculated before using bootstrap using the phylip format.
+
+- `Distance_matrix_all.txt`: Inside `Ouputs` folder. File which contains a distance matrix for each sub-sample created using bootstrap. It follows the phylip format.
 
 
 ## Folders
