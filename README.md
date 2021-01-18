@@ -65,18 +65,13 @@ To activate the `viphy-env.yml` environment:
 
 To deactivate the conda environment:
 
-	$ source deactivate
+	$ conda deactivate
 
 
 ### Dependencies
 
 - Python 3.8.3
 - Biopython 1.78
-
-If you are using linux you may require other libraries. So please use the following commands:
-	
-	$ sudo chmod +x linux_requirements.txt
-	$ sudo pip install -r requirements.txt
 
 
 ## Settings.json
