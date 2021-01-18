@@ -48,7 +48,7 @@ Once the distance matrix has been obtained, the code will generate a phylogeneti
 
 After this, if the user wishes it, bootstrap will be used to create sub-samples from which the parameters of the model are estimated repeated times.
 
-At the end, a consensus tree will be created with all the samples obtained.
+At the end, a consensus tree will be created with all the samples obtained and stored in the `Outputs` folder.
 
 
 ## Viphy_env.yml
