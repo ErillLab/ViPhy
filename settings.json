@@ -7,8 +7,12 @@
 "output_folder" : "Outputs",
 "genome_accessions": [[]],
 "e_value": 0.00001,
-"distance_function": "d4",
-"confidence_interval" : "bootstrapping",
-"replicates": 100
+"distance_function": "d0",
+"replicates": 100,
+"cutoff": 0.7,
+"majority_or_support_tree": "both",
+"get_original_newick_tree": "True",
+"get_original_distance_matrix": "True",
+"get_bootstrap_distance_matrix": "True"
 }
 

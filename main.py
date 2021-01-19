@@ -53,6 +53,15 @@ def access_ncbi(accessing_list, user_email, input_folder):
                     download_file(user_email, file_path, list)
 
 
+def delete_content_folder(folder_path):
+    '''
+    Deletes the content of a specific folder
+    :param folder_path: name of the folder from which the files will be deleted
+    '''
+    for file in os.listdir(folder_path):
+        os.remove(folder_path + '/' + file)
+
+
 def download_file(user_email, file_path, list):
     '''
     Downloads files form NCBI in GenBank plain text format and saves it into the input folder
@@ -378,8 +387,9 @@ def display_error_messages(error_list):
     Shows the error messages collected during the preprocessing phase
     :param error_list: list of errors that have arisen during the sequence preprocessing
     '''
+    print('\n', "----------------ERROR LIST------------------")
     if len(error_list) > 0:
-        print('\n', "The following files has been ignored:")
+        print("The following files has been ignored:")
         for f in error_list:
             print("-", f[0], ": ", f[1])  # File name + error
     else:
@@ -399,8 +409,7 @@ def make_blast_database(working_folder):
 
     if os.path.exists(db_folder):
         # Deletes old databases before creating a new one
-        for file in os.listdir(db_folder):
-            os.remove(db_folder + '/' + file)
+        delete_content_folder(db_folder)
 
     # Concatenates all the working_files
     id_list, length_list = concatenate_files(working_folder, db_file, id_list, length_list)
@@ -548,7 +557,7 @@ def coverage(list, query, hit, query_start, query_end, identity, dict):
     return dict
 
 
-def get_newick_tree(dictionary, distance_dictionary, distance_function, replicates, output_folder):
+def get_newick_tree(dictionary, distance_dictionary, distance_function, replicates):
     '''
     Calculates the distance between two sequences with the formula indicated by the user. It is done as many times as
     specified by the number of replicates. Once the distance values have been obtained, it is time to create a
@@ -557,11 +566,9 @@ def get_newick_tree(dictionary, distance_dictionary, distance_function, replicat
     :param distance_dictionary: dictionary where the distances will be saved
     :param distance_function: indicates the formula that will be used to get the distance
     :param replicates: number of replicates of the original coverage vector using bootstrap
-    :param output_folder: name of the file where the consensus tree will be stored
     :return: Returns a tree following the newick format
     '''
     count = 0
-    tree_list = []
 
     while count <= replicates:
         if count != 0:
@@ -576,30 +583,39 @@ def get_newick_tree(dictionary, distance_dictionary, distance_function, replicat
             else:
                 print("Please, introduce a valid distance function. It can be 'd0', 'd4' or 'd6'.")
 
-        # Creates the distance matrix
-        # d_matrix, key_list = distance_matrix(distance_dictionary, count)
-        # tree_list.append()
         newick_tree = distance_matrix(distance_dictionary, count)
+
+        if count == 0:
+            original_newick_tree = newick_tree  # Tree before bootstrap
+
         count += 1
-        # target_tree = list(Phylo.parse('tree_0.nwk', 'newick'))
-    return newick_tree
+
+    return original_newick_tree
 
 
-def consensus_tree(original_tree, trees, output_folder):
+def majority_consensus_tree(tree_list, cutoff):
     '''
-    Creates a consensus tree
+    Search majority rule consensus tree from multiple trees.
+    :param tree_list: list of trees created with bootstrap
+    :param cutoff: threshold used to compare the branches from different trees. Any clade that has <= cutoff support
+    will be dropped.
+    '''
+
+    majority_tree = majority_consensus(tree_list, cutoff)
+    Phylo.write(majority_tree, sys.stdout, "newick")
+    Phylo.write(majority_tree, output_folder + "/majority_consensus_tree.nwk", "newick")
+
+
+def get_support_tree(original_tree, trees, output_folder):
+    '''
+    Calculate branch support for a target tree given bootstrap replicate trees
     :param target_tree: original tree created without using bootstrap samples
     :param trees: list of trees created with bootstrap
     :param output_folder: name of the file where the consensus tree will be stored
-    :return:
     '''
-    # tree_list = []
-    # tree_list.append(target_tree)
-    majority_tree = Consensus.get_support(original_tree, trees)
-    # majority_tree = majority_consensus(trees, 0.7)
-    # Phylo.draw_ascii(majority_tree)
-    Phylo.write(majority_tree, sys.stdout, "newick")
-    Phylo.write(majority_tree, output_folder + "/consensus_tree.nwk", "newick")
+    tree_with_support = Consensus.get_support(original_tree, trees)
+    Phylo.write(tree_with_support, sys.stdout, "newick")
+    Phylo.write(tree_with_support, output_folder + "/support_consensus_tree.nwk", "newick")
 
 
 def bootstrap(dict):
@@ -670,23 +686,21 @@ def d4(dict, distance_dictionary):
         dif_zero1 = vector_no_zeros(coverage_vector)
         dif_zero2 = vector_no_zeros(inverted_coverage_vector)
 
-        # Hits length or sum of vales that are not zero on the coverage vector
-        hit_length = dif_zero1 + dif_zero2
+        if dif_zero1 != 0 and dif_zero2 != 0:
+            # Calculates the average identity between the coverage vector and its opposite
+            sum_identities = identities1 / dif_zero1
+            inverted_sum_identities = identities2 / dif_zero2
+            total_identities = (sum_identities + inverted_sum_identities) / 2
 
-        if dif_zero1 == 0:
-            dif_zero1 = 1
-        if dif_zero2 == 0:
-            dif_zero2 = 1
-        if hit_length == 0:
+            # Hits length or sum of vales that are not zero on the coverage vector
+            hit_length = dif_zero1 + dif_zero2
+        else:  # Both sequences are completely different
+            total_identities = 0
             hit_length = 1
-
-        # Calculates the average identity between the coverage vector and its opposite
-        sum_identities = identities1 / dif_zero1
-        inverted_sum_identities = identities2 / dif_zero2
-        total_identities = (sum_identities + inverted_sum_identities) / 2
 
         # Distance formula
         distance_dictionary[key] = 1 - ((2 * total_identities) / hit_length)
+
     return distance_dictionary
 
 
@@ -700,8 +714,6 @@ def d6(dict, distance_dictionary):
     '''
     for key in dict.keys():
         total_length = 0
-        sum_identities = 0
-        dif_zero = 0
 
         # Sequences
         coverage_vector = dict[key]
@@ -718,15 +730,13 @@ def d6(dict, distance_dictionary):
         dif_zero1 = vector_no_zeros(coverage_vector)
         dif_zero2 = vector_no_zeros(inverted_coverage_vector)
 
-        if dif_zero1 == 0:
-            dif_zero1 = 1
-        if dif_zero2 == 0:
-            dif_zero2 = 1
-
-        # Calculates the average identity between the coverage vector and its opposite
-        sum_identities = identities1 / dif_zero1
-        inverted_sum_identities = identities2 / dif_zero2
-        total_identities = (sum_identities + inverted_sum_identities) * 0.5
+        if dif_zero1 != 0 and dif_zero2 != 0:
+            # Calculates the average identity between the coverage vector and its opposite
+            sum_identities = identities1 / dif_zero1
+            inverted_sum_identities = identities2 / dif_zero2
+            total_identities = (sum_identities + inverted_sum_identities) * 0.5
+        else:  # Both sequences are completely different
+            total_identities = 0
 
         # Calculate the length of the complete vector
         total_length += vector_length(coverage_vector)
@@ -820,9 +830,9 @@ def distance_matrix(dictionary, replicates):
 def phylip_file(key_list, d_matrix, file_name):
     '''
     Writes in a file the values of a distance matrix following the phylip format
-    :param key_list:
-    :param d_matrix:
-    :param file_name:
+    :param key_list: list where all the sequences identifiers are stored
+    :param d_matrix: matrix that contains all distances between sequences pairs
+    :param file_name: name of the file that will contain the distance matrix in phylip format
     '''
     line = ""
     count = 0
@@ -860,7 +870,17 @@ def lower_triangle_matrix(d_matrix, key_list, replicates):
     num_sequences = len(key_list)  # Number of sequences we are comparing
 
     # Takes the values of the lower triangular distance matrix and saves in a list
-    array = d_matrix[np.tril_indices(num_sequences)]
+    # array = d_matrix[np.tril_indices(num_sequences)]
+    aux_list = []
+    position = 0
+    for l in d_matrix:
+        internal_counter = 0
+        for element in l:
+            if internal_counter <= position:
+                aux_list.append(element)
+            internal_counter += 1
+        position += 1
+    array = np.array(aux_list)
 
     # Converts the list of distances calculated above into a matrix
     for i in range(0, num_sequences):
@@ -912,47 +932,80 @@ if __name__ == '__main__':
     analysis_type = json_file["analysis_type"]
     access_ncbi_list = json_file["genome_accessions"]
     user_email = json_file["user_email"]
-    e_value = json_file["e_value"]
     distance_function = json_file["distance_function"]
     replicates = json_file["replicates"]
+
+    # Numeric values obtained from configuration file
+    e_value = json_file["e_value"]
+    if e_value < 0:
+        print('\n', "The entered e_value is negative when it should be a positive value. It will be convert into positive to "
+              "continue the process.")
+        e_value = e_value * -1
+
+    cutoff = json_file["cutoff"]
+    if 0 > cutoff or cutoff > 1:
+        print('\n', "The entered cutoff value is not correct. It should be between 0 and 1. Until you change it, cutoff "
+              "value will be 0, in other words, the default value will be used.")
+        cutoff = 0
+
+    # Output configuration
+    majority_or_support_tree = json_file["majority_or_support_tree"]
+    get_original_newick_tree = json_file["get_original_newick_tree"]
+    get_original_distance_matrix = json_file["get_original_distance_matrix"]
+    get_bootstrap_distance_matrix = json_file["get_bootstrap_distance_matrix"]
+
 
     # Get NCBI files
     access_ncbi(access_ncbi_list, user_email, input_folder)
 
     # Deletes all files from working folder
-    for file in os.listdir(working_folder):
-        os.remove(working_folder + '/' + file)
+    delete_content_folder(working_folder)
 
     # Deletes all files from output folder
-    for file in os.listdir(output_folder):
-        os.remove(output_folder + '/' + file)
+    delete_content_folder(output_folder)
 
     file_error_list = []
+    n_files = 0
+
     # Preprocessing phase
     for file in os.listdir(input_folder):  # Navigates into the input_folder
+        n_files += 1
         file_error_list = preprocessing_phase(file, file_error_list)
 
     # Displays a list of error detected in the preprocessing code
     display_error_messages(file_error_list)
 
-    # Builts a database
-    dictionary, distance_dictionary = make_blast_database(working_folder)
+    if len(file_error_list) < n_files - 1:
+        # Builds a database
+        dictionary, distance_dictionary = make_blast_database(working_folder)
 
-    print("This might take a few minutes...")
-    # Uses Blastp to the coverage_vector for each sequence pair
-    dictionary = coverage_vector(working_folder, e_value, dictionary)
+        print("This might take a few minutes...")
+        # Uses Blastp to the coverage_vector for each sequence pair
+        coverage_vector_dictionary = coverage_vector(working_folder, e_value, dictionary)
 
-    # Distance and phylogenetic trees
-    newick_tree = get_newick_tree(dictionary, distance_dictionary, distance_function, replicates, output_folder)
+        # Distance and phylogenetic trees
+        newick_tree = get_newick_tree(coverage_vector_dictionary, distance_dictionary, distance_function, replicates)
 
-    tree_list = []
+        tree_list = []
 
-    # Read trees from files
-    count = 0
-    for file in os.listdir(working_folder):
-        if os.path.splitext(working_folder + '/' + file)[1] == '.nwk':
-            tree_list.append(Phylo.read(working_folder + '/' + file, 'newick'))
+        # Read trees from files
+        count = 0
+        for file in os.listdir(working_folder):
+            if os.path.splitext(working_folder + '/' + file)[1] == '.nwk':
+                # Save all bootstrap trees in a single list
+                tree_list.append(Phylo.read(working_folder + '/' + file, 'newick'))
 
-    # Consensus tree
-    consensus_tree(newick_tree, tree_list, output_folder)
-
+        # Consensus tree
+        if majority_or_support_tree in ["Support", "support"]:
+            get_support_tree(newick_tree, tree_list, output_folder)
+        elif majority_or_support_tree in ["Majority", "majority"]:
+            majority_consensus_tree(tree_list, cutoff)
+        else:
+            if majority_or_support_tree in ["Both", "both"]:
+                get_support_tree(newick_tree, tree_list, output_folder)
+                majority_consensus_tree(tree_list, cutoff)
+            else:
+                print("Not majority tree consensus or support tree will be calculated")
+    else:
+        print('\n', "At least two correct sequences to compare are needed. Please, check the error list to solve the "
+              "detected problems.")

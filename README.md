@@ -100,7 +100,16 @@ Structure of the JSON file:
 	"distance_function": "d6",
 
 	"replicates": 100,
+	
+	"cutoff": 0.7,
 
+	"majority_or_support_tree": "both",
+
+	"get_original_newick_tree": "True",
+
+	"get_original_distance_matrix": "True",
+
+	"get_bootstrap_distance_matrix": "True"
 }
 
 
@@ -110,12 +119,18 @@ Structure of the JSON file:
 - "user_email": Email that will be used to identify the user in NCBI
 - "analysis_type": Can be "nucleotide" or "protein"
 - "input_folder": Folder where you can find the fasta or genbank files that the program will read
-- "working_folder": Path for the directory in which all the other files are located.
+- "working_folder": Path for the directory in which all the other files are located
 - "output_folder": Folder in which the outgoing files will be located.
 - "genome_accessions": List of lists that contains the identifier of the files you want to download from Genbank database. 
 - "e_value": Number of expected hits of similar score that could be found just by chance 
-- "distance_function": Type of function that will be used to calculate the distance between two sequences. It should be "d0", "d4" or "d6".
+- "distance_function": Type of function that will be used to calculate the distance between two sequences. It should be "d0", "d4" or "d6"
 - "replicates": Number of bootstrap samples 
+- "majority_or_support_tree": Way to calculate a consensus tree. It can be "majority", "support" or "both"
+- "cutoff": Threshold used when "majority" consensus tree is selected. It should be a number between 0 and 1.
+- "get_original_newick_tree": Indicates using a boolean if you want to get the original newick tree
+- "get_original_distance_matrix": Indicates using a boolean if you want to get the original distance matrix in phylip format
+- "get_bootstrap_distance_matrix": Indicates using a boolean if you want to get each one of the possible distance matrix for each bootstrap sample
+
 
 
 ## Other files
@@ -130,11 +145,13 @@ Structure of the JSON file:
 
 - `Original_tree.nwk`: Inside `Outputs`. File that contains the original phylogenetic tree, in other words, the phylogenetic tree before using bootstrap.
 
-- `Consensus_tree.nwk`: Inside `Outputs`. File that contains the final consensus phylogenetic tree in newick format. 
+- `Support_consensus_tree.nwk`: Inside `Outputs`. File that contains the final consensus phylogenetic tree in newick format with branches support.
+
+- `Majority_consensus_tree.nwk`: Inside `Outputs`. File that contains the final consensus phylogenetic tree in newick format following the majority rule.
 
 - `Original distance matrix.txt`: Inside `Outputs` folder. This file contains the distance matrix calculated before using bootstrap using the phylip format.
 
-- `Distance_matrix_all.txt`: Inside `Ouputs` folder. File which contains a distance matrix for each sub-sample created using bootstrap. It follows the phylip format.
+- `Bootstrap_distance_matrix.txt`: Inside `Ouputs` folder. File which contains a distance matrix for each sub-sample created using bootstrap. It follows the phylip format.
 
 
 ## Folders
