@@ -151,7 +151,7 @@ Structure of the JSON file:
 
 - `Original distance matrix.txt`: Inside `Outputs` folder. This file contains the distance matrix calculated before using bootstrap using the phylip format.
 
-- `Bootstrap_distance_matrix.txt`: Inside `Ouputs` folder. File which contains a distance matrix for each sub-sample created using bootstrap. It follows the phylip format.
+- `Bootstrap_distance_matrix.txt`: Inside `Ouputs` folder. File which contains a distance matrix for each sub-sample created using bootstrap. It follows the phylip format. All will be stored in the same file. 
 
 
 ## Folders

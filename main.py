@@ -16,8 +16,7 @@ import os
 import re
 import sys
 
-from io import StringIO
-
+import time
 import warnings
 
 warnings.simplefilter("ignore")
@@ -37,7 +36,8 @@ def access_ncbi(accessing_list, user_email, input_folder):
             file_name = list[0] + ".gb"
             file_path = input_folder + '/' + file_name
 
-            if not os.path.exists(file_path):  # Checks if the file was downloaded before
+            # Checks if the file was downloaded before
+            if not os.path.exists(file_path):
                 print('Downloading ' + file_name)
                 download_file(user_email, file_path, list)
 
@@ -48,18 +48,11 @@ def access_ncbi(accessing_list, user_email, input_folder):
             for position in range(list_length):
                 file_name = list[position] + ".gb"
                 file_path = folder_path + '/' + file_name
+
                 if not os.path.exists(file_path):  # Checks if the file was downloaded before
                     print('Downloading ' + file_name)
                     download_file(user_email, file_path, list)
-
-
-def delete_content_folder(folder_path):
-    '''
-    Deletes the content of a specific folder
-    :param folder_path: name of the folder from which the files will be deleted
-    '''
-    for file in os.listdir(folder_path):
-        os.remove(folder_path + '/' + file)
+                    time.sleep(0.25)  # Waits some time after each download
 
 
 def download_file(user_email, file_path, list):
@@ -69,19 +62,33 @@ def download_file(user_email, file_path, list):
     :param file_path: input folder path or subdirectory where the files will be saved
     :param list: list that contains the files to download
     '''
-    match = re.search(r'[\w.-]+@[\w.-]+.\w+', user_email)
+    match = re.search(r'[\w.-]+@[\w.-]+.\w+', user_email)  # Checks if the e-mail follows the correct format
     if match:
         Entrez.email = user_email  # Always tell NCBI who you are
-        try:
-            handle = Entrez.efetch(db="nucleotide", id=list[0], rettype="gbwithparts", retmode="text")
-            data = handle.read()
-            f = open(file_path, "w")
-            f.write(data)
-            f.close()
-        except Exception:
+        count = 0
+        while  0 <= count < 3:  # Tries to download a file at most 3 times if it does succeed at first time
+            try:
+                handle = Entrez.efetch(db="nucleotide", id=list[0], rettype="gbwithparts", retmode="text")
+                data = handle.read()
+                f = open(file_path, "w")
+                f.write(data)
+                f.close()
+                count = -1
+            except Exception:
+                count += 1
+        if count == 3:
             print("Download unsuccessful! Cannot fetch " + list[0])
     else:
         print("Please, introduce a valid email address format")
+
+
+def delete_content_folder(folder_path):
+    '''
+    Deletes the content of a specific folder
+    :param folder_path: name of the folder from which the files will be deleted
+    '''
+    for file in os.listdir(folder_path):
+        os.remove(folder_path + '/' + file)
 
 
 def read_fasta_file(input_folder, fasta_file):
@@ -136,15 +143,17 @@ def read_gb_file_as_protein(input_folder, gb_file):
     '''
     id_list = []
     protein_list = []
-    file_name = str(gb_file).split('.')
+    file_name = str(gb_file).split('.')  # Delete extension from the file name
+    with open(input_folder + '/' + gb_file, 'r') as gb_file:
+        gb_cds = SeqIO.InsdcIO.GenBankCdsFeatureIterator(gb_file)
+        for cds in gb_cds:
+            if cds.seq is not None:
+                if file_name[0] not in id_list:
+                    id_list.append(file_name[0])
+                else:
+                    id_list.append(cds.id)
+                protein_list.append(cds.seq)
 
-    for seq_record in SeqIO.parse(input_folder + '/' + gb_file, "genbank"):
-        for seq_feature in seq_record.features:
-            if seq_feature.type == "CDS":
-                #id_list.append(seq_feature.qualifiers['protein_id'][0])
-                id_list.append(file_name[0])
-                protein_list.append(
-                    seq_feature.qualifiers['translation'][0])  # Saves protein sequences
     return id_list, protein_list
 
 
@@ -217,10 +226,10 @@ def export_fasta(id_lists, protein_seq_lists, working_folder):
         str_list = str(id_lists[0])
         if str_list.count("[") > 0:
             id_name = id_lists[0][0]
-            working_file = working_folder + '/' + id_name + '.fasta'
+            working_file = working_folder + '/' + id_name + '.fasta'  # File name
         else:
             id_name = id_lists[0]
-            working_file = working_folder + '/' + id_name + '.fasta'
+            working_file = working_folder + '/' + id_name + '.fasta' # File name
 
         file_content = ""
         for sequence_list in protein_seq_lists:
@@ -244,7 +253,7 @@ def export_fasta_as_protein_folder(id_lists, protein_seq_lists, working_folder):
     '''
     element_count = 0
 
-    working_file = working_folder + '/' + id_lists[0][0] + '.fasta'
+    working_file = working_folder + '/' + id_lists[0][0] + '.fasta'  # File name
     f = open(working_file, "w")
     for protein_double_list in protein_seq_lists:
         list_count = len(protein_double_list)
@@ -482,12 +491,11 @@ def coverage_vector(working_folder, e_value, dict):
     :param dict: dictionary where we will save a vector with the hits position and its scores
     :return: Returns a dictionary that contains the coverage vectors
     '''
-
     for file in os.listdir(working_folder):
         seq_file_path = working_folder + '/' + file
         seq_file2 = seq_file_path.split(".")  # Removes the file extension from the file name
         seq_file_name = seq_file2[0].split("/")  # Removes the directory from the file name
-        alignment_file = 'dbFolder/' + seq_file_name[1] + "_to_DB.xml"  # Output file name
+        alignment_file = 'dbFolder/' + seq_file_name[1] + "_to_DB.xml"  # Final file path
 
         # Blatp of the file against the database
         cmd = NcbiblastpCommandline(query=seq_file_path, db="dbFolder/DataBase", evalue=e_value, outfmt=5,
@@ -544,6 +552,7 @@ def coverage(list, query, hit, query_start, query_end, identity, dict):
     :return: Returns the updated dictionary and a boolean that indicates whether or not there is an overlap
     '''
     # Fills the list in the positions where a hits happens with the score value
+    # print("test: ", query, '-', hit, '...', len(dict[query + '-' + hit]), query_end)
     for i in range(query_start, query_end + 1):
         if dict[query + '-' + hit][i - 1] == 0:
             list[i - 1] = identity
@@ -600,7 +609,7 @@ def majority_consensus_tree(tree_list, cutoff):
     :param cutoff: threshold used to compare the branches from different trees. Any clade that has <= cutoff support
     will be dropped.
     '''
-
+    print("Majority consensus tree: ")
     majority_tree = majority_consensus(tree_list, cutoff)
     Phylo.write(majority_tree, sys.stdout, "newick")
     Phylo.write(majority_tree, output_folder + "/majority_consensus_tree.nwk", "newick")
@@ -613,6 +622,7 @@ def get_support_tree(original_tree, trees, output_folder):
     :param trees: list of trees created with bootstrap
     :param output_folder: name of the file where the consensus tree will be stored
     '''
+    print("Support tree: ")
     tree_with_support = Consensus.get_support(original_tree, trees)
     Phylo.write(tree_with_support, sys.stdout, "newick")
     Phylo.write(tree_with_support, output_folder + "/support_consensus_tree.nwk", "newick")
@@ -690,16 +700,14 @@ def d4(dict, distance_dictionary):
             # Calculates the average identity between the coverage vector and its opposite
             sum_identities = identities1 / dif_zero1
             inverted_sum_identities = identities2 / dif_zero2
-            total_identities = (sum_identities + inverted_sum_identities) / 2
-
+            total_identities = (sum_identities + inverted_sum_identities) * 0.5
             # Hits length or sum of vales that are not zero on the coverage vector
             hit_length = dif_zero1 + dif_zero2
-        else:  # Both sequences are completely different
-            total_identities = 0
-            hit_length = 1
 
-        # Distance formula
-        distance_dictionary[key] = 1 - ((2 * total_identities) / hit_length)
+            # Distance formula
+            distance_dictionary[key] = 1 - ((2 * total_identities) / hit_length)
+        else:  # Both sequences are completely different
+            distance_dictionary[key] = 1.0
 
     return distance_dictionary
 
@@ -713,8 +721,6 @@ def d6(dict, distance_dictionary):
     :return: Returns the current distance dictionary
     '''
     for key in dict.keys():
-        total_length = 0
-
         # Sequences
         coverage_vector = dict[key]
 
@@ -735,15 +741,15 @@ def d6(dict, distance_dictionary):
             sum_identities = identities1 / dif_zero1
             inverted_sum_identities = identities2 / dif_zero2
             total_identities = (sum_identities + inverted_sum_identities) * 0.5
+
+            # Calculate the length of the complete vector
+            total_length = vector_length(coverage_vector)
+            total_length += vector_length(inverted_coverage_vector)
+
+            # Distance formula
+            distance_dictionary[key] = 1 - ((2 * total_identities) / total_length)
         else:  # Both sequences are completely different
-            total_identities = 0
-
-        # Calculate the length of the complete vector
-        total_length += vector_length(coverage_vector)
-        total_length += vector_length(inverted_coverage_vector)
-
-        # Distance formula
-        distance_dictionary[key] = 1 - ((2 * total_identities) / total_length)
+            distance_dictionary[key] = 1.0
 
     return distance_dictionary
 
@@ -819,11 +825,13 @@ def distance_matrix(dictionary, replicates):
     tree = lower_triangle_matrix(matrix, key_list, replicates)
 
     if replicates == 0:
-        file_name = 'original_distance_matrix.txt'
-        phylip_file(key_list, matrix, file_name)
+        if get_original_distance_matrix in ["True", "true"]:
+            file_name = 'original_distance_matrix.txt'
+            phylip_file(key_list, matrix, file_name)
     else:
-        file_name = 'distance_matrix_all.txt'
-        phylip_file(key_list, matrix, file_name)
+        if get_bootstrap_distance_matrix in ["True", "true"]:
+            file_name = 'all_distance_matrix.txt'
+            phylip_file(key_list, matrix, file_name)
     return tree  # matrix, key_list
 
 
@@ -900,7 +908,8 @@ def lower_triangle_matrix(d_matrix, key_list, replicates):
 
     # Saves the original tree into a file with newick format
     if replicates == 0:
-        Phylo.write(tree, output_folder + "/original_tree.nwk", "newick")
+        if get_original_newick_tree in ["True", "true"]:
+            Phylo.write(tree, output_folder + "/original_tree.nwk", "newick")
     else:
         Phylo.write(tree, working_folder + "/tree_" + str(replicates) + ".nwk", "newick")
 
@@ -913,7 +922,7 @@ if __name__ == '__main__':
     # Configuration file
     setting_file = "settings.json"
     try:
-        json_file = json.load(open(setting_file))  # Reads json file
+        json_file = json.load(open(setting_file)) # Reads json file
     except IOError:
         sys.exit('Could not open settings.json')
 
