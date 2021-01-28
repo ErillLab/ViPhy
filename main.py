@@ -406,11 +406,11 @@ def display_error_messages(error_list):
 
 
 def make_blast_database(working_folder):
-    '''
+    """
     Concatenats all the files extracted from the working folder and creates a BLAST database
     :param working_folder: directory from where we get the fasta files with protein sequences
     :return: Returns two created dictionaries
-    '''
+    """
     db_folder = "dbFolder"
     db_file = "DataBase.fasta"
     id_list = []
@@ -861,14 +861,14 @@ def phylip_file(key_list, d_matrix, file_name):
 
 
 def lower_triangle_matrix(d_matrix, key_list, replicates):
-    '''
+    """
     Creates a lower triangular matrix using a pre-calculated distance matrix and a list with all the sequences
     identifiers that are being compared
     :param d_matrix: matrix that contains all distances between sequences pairs
     :param key_list: list where all the sequences identifiers are stored
     :param replicates: number that indicates the current bootstrap sample
     :return:
-    '''
+    """
     matrix = []
     list = []
     count = 1
@@ -902,18 +902,18 @@ def lower_triangle_matrix(d_matrix, key_list, replicates):
     # Creates a lower triangular matrix object
     dm = TreeConstruction.DistanceMatrix(key_list, matrix)
 
-    #calculator = DistanceCalculator('identity')
     constructor = DistanceTreeConstructor()
     tree = constructor.nj(dm)
 
     # Saves the original tree into a file with newick format
     if replicates == 0:
-        if get_original_newick_tree in ["True", "true"]:
+        if get_original_newick_tree in ["True", " vtrue"]:
+            for node in tree.get_nonterminals():
+                node.name = None
             Phylo.write(tree, output_folder + "/original_tree.nwk", "newick")
     else:
         Phylo.write(tree, working_folder + "/tree_" + str(replicates) + ".nwk", "newick")
 
-    # Phylo.write(tree, 'Tree_'+ str(replicates) + ".xml", "phyloxml")
     return tree
 
 

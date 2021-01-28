@@ -132,7 +132,6 @@ Structure of the JSON file:
 - "get_bootstrap_distance_matrix": Indicates using a boolean if you want to get each one of the possible distance matrix for each bootstrap sample
 
 
-
 ## Other files
 
 - Fasta files: Inside `Inputs` folder. Documents that contain a nucleotide or amino acid sequence that the program will read. If the content is a nucleotide sequence, it will be translates into proteins.
@@ -153,8 +152,16 @@ Structure of the JSON file:
 
 - `Bootstrap_distance_matrix.txt`: Inside `Ouputs` folder. File which contains a distance matrix for each sub-sample created using bootstrap. It follows the phylip format. All will be stored in the same file. 
 
+- `get_accessions_list.py`: Inside `src` folder. File written in Python that can be used to calculate an accession list from a csv file.
+
+- `csv_configuration_file.json`: Inside `src` folder. File with the appropriate settings that `get_accessions_list.py` will need to work correctly. You must add the input file name and the column you want to read. Please, remember that the fist column won't be 1, but 0. 
+
+- `accessions_list.txt`: Output obtained after running `get_accessions_list.py` 
+
 
 ## Folders
+
+- ``src``: Folder that contains additional code files.
 
 - ``Inputs``: Folder to store the set of files that the program will read.
 
@@ -163,4 +170,5 @@ Structure of the JSON file:
 - ``Outputs``: Folder that stores the final results.
 
 - ``dbFolder``: Folder where the database will be stored after its creation.
+
 
