@@ -111,7 +111,7 @@ def read_fasta_file(input_folder, fasta_file):
     return record_id, record_seq
 
 
-def read_gb_as_nucleotide(input_folder, gb_file, error_list):
+def read_gb_file_as_nucleotide(input_folder, gb_file, error_list):
     '''
     Reads and extracts a nucleotide sequence from a Genbank file
     :param input_folder: folder from where we obtain the genbank file to read
@@ -144,14 +144,25 @@ def read_gb_file_as_protein(input_folder, gb_file):
     id_list = []
     protein_list = []
     file_name = str(gb_file).split('.')  # Delete extension from the file name
+    list_length = len(file_name)
     with open(input_folder + '/' + gb_file, 'r') as gb_file:
         gb_cds = SeqIO.InsdcIO.GenBankCdsFeatureIterator(gb_file)
+        if list_length == 2:
+            recorder = SeqIO.read(input_folder + '/' + file_name[0] + '.' + file_name[1], "genbank")
+        elif list_length == 3:
+            recorder = SeqIO.read(input_folder + '/' + file_name[0] + '.' + file_name[1] + '.' + file_name[2],
+                                  "genbank")
+        description = recorder.description
         for cds in gb_cds:
             if cds.seq is not None:
                 if file_name[0] not in id_list:
-                    id_list.append(file_name[0])
+                    description = description.replace("-", "_")
+                    description = description.replace("/", "_")
+                    description = description.replace(" ", "_")
+                    description_name = description.split(",")
+                    id_list.append(str(file_name[0]) + '_' + str(description_name[0]))
                 else:
-                    id_list.append(cds.id)
+                    id_list.append(str(cds.id) + '_' + str(description))
                 protein_list.append(cds.seq)
 
     return id_list, protein_list
@@ -309,7 +320,7 @@ def preprocessing_as_nucleotide(file, file_extension, error_list):
             error_list.append([file, "Does not contain a nucleotide sequence."])
     else:
         if file_extension in ['.gb', '.gbk', '.genbank']:
-            sequence_id, sequence, error_list = read_gb_as_nucleotide(input_folder, file, error_list)
+            sequence_id, sequence, error_list = read_gb_file_as_nucleotide(input_folder, file, error_list)
             protein_seq = translate_to_protein(sequence)
             export_fasta(sequence_id, protein_seq, working_folder)
         elif os.path.isdir(input_folder + '/' + file):  # If it finds a folder rather than a file
@@ -328,7 +339,7 @@ def preprocessing_as_nucleotide(file, file_extension, error_list):
                     if os.stat(subdirectory + '/' + subdirectory_file).st_size == 0:  # If there is a empty file
                         error_list.append([subdirectory_file, "It is a empty file"])
                     else:
-                        id, seq, error_list = read_gb_as_nucleotide(subdirectory, subdirectory_file, error_list)
+                        id, seq, error_list = read_gb_file_as_nucleotide(subdirectory, subdirectory_file, error_list)
                         if is_nucleotide_true(seq):
                             sequence_id.append(id)
                             sequence_list.append(seq)  # Concatenates all sequences from the subdirectory files
@@ -472,6 +483,7 @@ def dictionary_creation(id_list, length_list):
     dictionary = {}
     distance_dictionary = {}
     count = 0
+
     for i in id_list:
         l = [0] * length_list[count]  # List of zeros
         for j in id_list:
@@ -553,13 +565,15 @@ def coverage(list, query, hit, query_start, query_end, identity, dict):
     '''
     # Fills the list in the positions where a hits happens with the score value
     # print("test: ", query, '-', hit, '...', len(dict[query + '-' + hit]), query_end)
+
     for i in range(query_start, query_end + 1):
-        if dict[query + '-' + hit][i - 1] == 0:
-            list[i - 1] = identity
-        elif dict[query + '-' + hit][i - 1] < identity:
-            list[i - 1] = identity
-        else:
-            list[i - 1] = dict[query + '-' + hit][i - 1]
+        if len(dict[query + '-' + hit]) > (query_end + 1):
+            if dict[query + '-' + hit][i - 1] == 0:
+                list[i - 1] = identity
+            elif dict[query + '-' + hit][i - 1] < identity:
+                list[i - 1] = identity
+            else:
+                list[i - 1] = dict[query + '-' + hit][i - 1]
 
     # Bootstrap of the coverage vector
     dict[query + '-' + hit] = list
@@ -747,7 +761,9 @@ def d6(dict, distance_dictionary):
             total_length += vector_length(inverted_coverage_vector)
 
             # Distance formula
-            distance_dictionary[key] = 1 - ((2 * total_identities) / total_length)
+            result = 1 - ((2 * total_identities) / total_length)
+
+            distance_dictionary[key] = round(result, 4)  # Limits the distance value to 5 decimals
         else:  # Both sequences are completely different
             distance_dictionary[key] = 1.0
 
