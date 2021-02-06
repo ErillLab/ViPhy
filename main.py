@@ -66,14 +66,15 @@ def download_file(user_email, file_path, list):
     if match:
         Entrez.email = user_email  # Always tell NCBI who you are
         count = 0
-        while  0 <= count < 3:  # Tries to download a file at most 3 times if it does succeed at first time
+        while 0 <= count < 3:  # Tries to download a file at most 3 times if it does succeed at first time
             try:
-                handle = Entrez.efetch(db="nucleotide", id=list[0], rettype="gbwithparts", retmode="text")
-                data = handle.read()
-                f = open(file_path, "w")
-                f.write(data)
-                f.close()
-                count = -1
+                if count >= 0:
+                    handle = Entrez.efetch(db="nucleotide", id=list[0], rettype="gbwithparts", retmode="text")
+                    data = handle.read()
+                    f = open(file_path, "w")
+                    f.write(data)
+                    f.close()
+                    count = -1
             except Exception:
                 count += 1
         if count == 3:
@@ -123,22 +124,36 @@ def read_gb_file_as_nucleotide(input_folder, gb_file, error_list):
     record_seq = []
     print('Reading ' + gb_file)
 
-    for records in SeqIO.parse(input_folder + '/' + gb_file, "genbank"):
+    with open(input_folder + '/' + gb_file, 'r') as gb_file:
+        records = SeqIO.read(gb_file, "genbank")
+        description = records.description
+
+        # Modifies the file name to respect a standard format
+        description = description.replace("-", "_")
+        description = description.replace(" ", "_")
+        description = description.replace("(", "_")
+        description = description.replace(")", "_")
+        description = description.replace("[", "_")
+        description = description.replace("]", "_")
+        description_division = description.split("/")
+        description_name = description_division[0].split(",")
+
         sequence = records.seq
         if isinstance(sequence, UnknownSeq):
             error_list.append([gb_file, "There seems to be no sequence in this GenBank file"])
         else:
-            record_id.append(records.id)
+            record_id.append(records.id + '_' + str(description_name[0]))
             record_seq.append(records.seq)
 
     return record_id, record_seq, error_list
 
 
-def read_gb_file_as_protein(input_folder, gb_file):
+def read_gb_file_as_protein(input_folder, gb_file, error_list):
     '''
     Reads and extracts protein sequences from a Genbank file
     :param input_folder: folder from where we obtain the genbank file to read
     :param gb_file: file that can store several sequences and extra information, including protein sequences
+    :param error_list: list of errors that have arisen during the sequence preprocessing
     :return: Returns a list of identifiers and another of protein sequences obtained from the genbank file
     '''
     id_list = []
@@ -153,19 +168,27 @@ def read_gb_file_as_protein(input_folder, gb_file):
             recorder = SeqIO.read(input_folder + '/' + file_name[0] + '.' + file_name[1] + '.' + file_name[2],
                                   "genbank")
         description = recorder.description
+        # Modifies the file name to respect a standard format
+        description = description.replace("-", "_")
+        description = description.replace(" ", "_")
+        description = description.replace("(", "_")
+        description = description.replace(")", "_")
+        description = description.replace("[", "_")
+        description = description.replace("]", "_")
+        description_division = description.split("/")
+        description_name = description_division[0].split(",")
+
         for cds in gb_cds:
             if cds.seq is not None:
                 if file_name[0] not in id_list:
-                    description = description.replace("-", "_")
-                    description = description.replace("/", "_")
-                    description = description.replace(" ", "_")
-                    description_name = description.split(",")
-                    id_list.append(str(file_name[0]) + '_' + str(description_name[0]))
+                    id_list.append(str(file_name[0]) + '_' + str(description_name[0]))  # Final file name
                 else:
                     id_list.append(str(cds.id) + '_' + str(description))
                 protein_list.append(cds.seq)
+            elif isinstance(cds.seq, UnknownSeq):
+                error_list.append([gb_file, "There seems to be no sequence in this GenBank file"])
 
-    return id_list, protein_list
+    return id_list, protein_list, error_list
 
 
 def is_nucleotide_true(fasta_content):
@@ -371,7 +394,7 @@ def preprocessing_as_protein(file, file_extension, error_list):
     else:
         if file_extension in ['.gb', '.gbk', '.genbank']:
             print('Reading ' + file)
-            sequence_id, sequence = read_gb_file_as_protein(input_folder, file)
+            sequence_id, sequence, error_list = read_gb_file_as_protein(input_folder, file, error_list)
             export_fasta(sequence_id, sequence,
                          working_folder)
         else:
@@ -391,7 +414,7 @@ def preprocessing_as_protein(file, file_extension, error_list):
                         if os.stat(subdirectory + '/' + subdirectory_file).st_size == 0:  # If there is a empty file
                             error_list.append([subdirectory_file, "It is a empty file"])
                         else:
-                            id, seq = read_gb_file_as_protein(subdirectory, subdirectory_file)
+                            id, seq, error_list = read_gb_file_as_protein(subdirectory, subdirectory_file, error_list)
                             if not is_nucleotide_true(seq):
                                 sequence_id.append(id)
                                 sequence_list.append(seq)
@@ -495,7 +518,7 @@ def dictionary_creation(id_list, length_list):
     return dictionary, distance_dictionary
 
 
-def coverage_vector(working_folder, e_value, dict):
+def coverage_vector_collection(working_folder, e_value, dict):
     '''
     Compares a protein sequence from a fasta file to a protein sequence from the database
     :param working_folder: directory from where we get the fasta files
@@ -565,9 +588,8 @@ def coverage(list, query, hit, query_start, query_end, identity, dict):
     '''
     # Fills the list in the positions where a hits happens with the score value
     # print("test: ", query, '-', hit, '...', len(dict[query + '-' + hit]), query_end)
-
     for i in range(query_start, query_end + 1):
-        if len(dict[query + '-' + hit]) > (query_end + 1):
+        if len(dict[query + '-' + hit]) >= query_end:
             if dict[query + '-' + hit][i - 1] == 0:
                 list[i - 1] = identity
             elif dict[query + '-' + hit][i - 1] < identity:
@@ -592,10 +614,10 @@ def get_newick_tree(dictionary, distance_dictionary, distance_function, replicat
     :return: Returns a tree following the newick format
     '''
     count = 0
-
+    original_dictionary = dictionary
     while count <= replicates:
         if count != 0:
-            dictionary = bootstrap(dictionary)  # Bootstrap to all the coverage vectors
+            dictionary = bootstrap(original_dictionary)  # Bootstrap to all the coverage vectors
         if distance_function == 'd0':
             distance_dictionary = d0(dictionary, distance_dictionary)
         else:
@@ -624,22 +646,22 @@ def majority_consensus_tree(tree_list, cutoff):
     will be dropped.
     '''
     print("Majority consensus tree: ")
-    majority_tree = majority_consensus(tree_list, cutoff)
-    Phylo.write(majority_tree, sys.stdout, "newick")
+    majority_tree = Consensus.majority_consensus(tree_list, cutoff)
     Phylo.write(majority_tree, output_folder + "/majority_consensus_tree.nwk", "newick")
+    Phylo.write(majority_tree, sys.stdout, "newick")
 
 
 def get_support_tree(original_tree, trees, output_folder):
     '''
     Calculate branch support for a target tree given bootstrap replicate trees
-    :param target_tree: original tree created without using bootstrap samples
+    :param original_tree: original tree created without using bootstrap samples
     :param trees: list of trees created with bootstrap
     :param output_folder: name of the file where the consensus tree will be stored
     '''
     print("Support tree: ")
     tree_with_support = Consensus.get_support(original_tree, trees)
-    Phylo.write(tree_with_support, sys.stdout, "newick")
     Phylo.write(tree_with_support, output_folder + "/support_consensus_tree.nwk", "newick")
+    Phylo.write(tree_with_support, sys.stdout, "newick")
 
 
 def bootstrap(dict):
@@ -655,6 +677,30 @@ def bootstrap(dict):
             position = randrange(length)
             aux_list.append(dict[key][position])
         dict[key] = aux_list
+    return dict
+
+
+def updated_bootstrap(dict):
+    '''
+    Samples a HSP with a specific number of replacements
+    :param dict: dictionary that contains the coverage vectors previously calculated
+    :return Returns a dictionary with the new samples created
+    '''
+    position_list = []
+    values_list = []
+    position = 0
+    for key in dict.keys():
+        for i in dict[key]:
+            if i != 0:
+                values_list.append(i)
+        for j in dict[key]:
+            if len(values_list) != 0:
+                v_list_position = randrange(len(values_list))
+                dict[key][position] = values_list[v_list_position]
+                if position < len(dict[key]):
+                    position += 1
+        position = 0
+
     return dict
 
 
@@ -762,8 +808,8 @@ def d6(dict, distance_dictionary):
 
             # Distance formula
             result = 1 - ((2 * total_identities) / total_length)
-
-            distance_dictionary[key] = round(result, 4)  # Limits the distance value to 5 decimals
+            result = "{:.8f}".format(result)
+            distance_dictionary[key] = float(result)  # Limits the distance value to 5 decimals
         else:  # Both sequences are completely different
             distance_dictionary[key] = 1.0
 
@@ -963,14 +1009,14 @@ if __name__ == '__main__':
     # Numeric values obtained from configuration file
     e_value = json_file["e_value"]
     if e_value < 0:
-        print('\n', "The entered e_value is negative when it should be a positive value. It will be convert into positive to "
-              "continue the process.")
+        print('\n', "The entered e_value is negative when it should be positive. It will be convert into a positive"
+              " value")
         e_value = e_value * -1
 
     cutoff = json_file["cutoff"]
     if 0 > cutoff or cutoff > 1:
-        print('\n', "The entered cutoff value is not correct. It should be between 0 and 1. Until you change it, cutoff "
-              "value will be 0, in other words, the default value will be used.")
+        print('\n', "The entered cutoff value is not correct. It should be between 0 and 1. Until you change it, cutoff"
+              " value will be 0, in other words, the default value will be used.")
         cutoff = 0
 
     # Output configuration
@@ -978,7 +1024,6 @@ if __name__ == '__main__':
     get_original_newick_tree = json_file["get_original_newick_tree"]
     get_original_distance_matrix = json_file["get_original_distance_matrix"]
     get_bootstrap_distance_matrix = json_file["get_bootstrap_distance_matrix"]
-
 
     # Get NCBI files
     access_ncbi(access_ncbi_list, user_email, input_folder)
@@ -1006,7 +1051,7 @@ if __name__ == '__main__':
 
         print("This might take a few minutes...")
         # Uses Blastp to the coverage_vector for each sequence pair
-        coverage_vector_dictionary = coverage_vector(working_folder, e_value, dictionary)
+        coverage_vector_dictionary = coverage_vector_collection(working_folder, e_value, dictionary)
 
         # Distance and phylogenetic trees
         newick_tree = get_newick_tree(coverage_vector_dictionary, distance_dictionary, distance_function, replicates)
@@ -1033,4 +1078,4 @@ if __name__ == '__main__':
                 print("Not majority tree consensus or support tree will be calculated")
     else:
         print('\n', "At least two correct sequences to compare are needed. Please, check the error list to solve the "
-              "detected problems.")
+              "detected problems and the '" + input_folder + "' folder.")

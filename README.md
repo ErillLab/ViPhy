@@ -156,7 +156,7 @@ Structure of the JSON file:
 
 - `csv_configuration_file.json`: Inside `src` folder. File with the appropriate settings that `get_accessions_list.py` will need to work correctly. You must add the input file name and the column you want to read. Please, remember that the fist column won't be 1, but 0. 
 
-- `accessions_list.txt`: Output obtained after running `get_accessions_list.py` 
+- `accessions_list.txt`: Output obtained after running `get_accessions_list.py`. Remember to add a comma after when you add it into `settings.json` file. 
 
 
 ## Folders
