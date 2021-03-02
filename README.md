@@ -161,7 +161,7 @@ Structure of the JSON file:
 
 ## Folders
 
-- ``src``: Folder that contains additional code files.
+- ``src``: Folder that contains code files. The file `__init__.py` includes the main function.
 
 - ``Inputs``: Folder to store the set of files that the program will read.
 
