@@ -76,7 +76,7 @@ class Blast:
                 self.length_list.append(len(record.seq))
 
         # Writes the content in a separated file that will be used to create the database
-        with open(self.db_file, 'w') as fW:
+        with open("../" + self.db_file, 'w') as fW:
             fW.write(data_base_content)
 
     def dictionary_creation(self):
