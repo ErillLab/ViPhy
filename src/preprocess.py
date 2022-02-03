@@ -224,7 +224,6 @@ class Preprocess:
                 self.error_list.append([file, "Does not contain a protein sequence. "])
         else:
             if file_extension in ['.gb', '.gbk', '.genbank']:
-                print('Reading ' + file)
                 sequence_id, sequence, self.error_list = read_gb_file_as_protein(input_folder, file, self.error_list)
                 export_fasta(sequence_id, sequence,
                              working_folder)
