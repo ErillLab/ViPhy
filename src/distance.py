@@ -111,9 +111,7 @@ def d4(coverage_vector_dictionary, distance_dictionary):
 
         if dif_zero1 != 0 and dif_zero2 != 0:
             # Calculates the average identity between the coverage vector and its opposite
-            sum_identities = identities1 / dif_zero1
-            inverted_sum_identities = identities2 / dif_zero2
-            total_identities = (sum_identities + inverted_sum_identities) * 0.5
+            total_identities = (identities1 + identities2) * 0.5
 
             # Hits length or sum of vales that are not zero on the coverage vector
             hit_length = dif_zero1 + dif_zero2
@@ -156,9 +154,7 @@ def d6(coverage_vector_dictionary, distance_dictionary):
 
         if dif_zero1 != 0 and dif_zero2 != 0:
             # Calculates the average identity between the coverage vector and its opposite
-            sum_identities = identities1 / dif_zero1
-            inverted_sum_identities = identities2 / dif_zero2
-            total_identities = (sum_identities + inverted_sum_identities) * 0.5
+            total_identities = (identities1 + identities2) * 0.5
 
             # Calculate the length of the complete vector
             total_length = vector_length(coverage_vector)

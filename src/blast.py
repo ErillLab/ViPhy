@@ -137,7 +137,7 @@ class Blast:
 
                 for hsp in alignment.hsps:
                     hit = hit.replace(' ', '')  # Deletes extra spaces in the sequence identifiers
-                    identity = hsp.identities  # Identical base pairs
+                    identity = hsp.identities / hsp.align_length  # Fraction of identical base pairs
                     query_start = hsp.query_start
                     query_end = hsp.query_end
 
