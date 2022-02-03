@@ -97,9 +97,9 @@ def read_gb_file_as_protein(input_folder, gb_file, error_list):
     return id_list, protein_list, error_list
 
 
-def phylip_file(key_list, d_matrix, file_name, output_folder):
+def export_matrix(key_list, d_matrix, file_name, output_folder):
     """
-    Writes in a file the values of a distance matrix following the phylip format
+    Writes in a file the values of a distance matrix following the TSV format
     :param key_list: list where all the sequences identifiers are stored
     :param d_matrix: matrix that contains all distances between sequences pairs
     :param file_name: name of the file that will contain the distance matrix in phylip format
@@ -116,9 +116,9 @@ def phylip_file(key_list, d_matrix, file_name, output_folder):
         for i in key_list:
             for j in range(length):
                 line += str(d_matrix[count][j])
-                line += "  "
+                line += "\t"
             line += '\n'
-            f.write('{} {}'.format(i, line))  # Writes the sequences and the distances of each comparison
+            f.write('{}\t{}'.format(i, line))  # Writes the sequences and the distances of each comparison
             count += 1
             line = ""
         f.write('\n')

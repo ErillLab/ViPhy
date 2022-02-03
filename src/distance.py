@@ -3,7 +3,7 @@ from Bio import Phylo
 from Bio.Phylo import TreeConstruction
 from Bio.Phylo.TreeConstruction import DistanceTreeConstructor
 
-from src.files import phylip_file
+from src.files import export_matrix
 
 import numpy as np
 
@@ -208,12 +208,12 @@ def distance_matrix(dictionary, replicates, working_folder, output_folder, origi
 
     if replicates == 0:
         if original_distance_matrix in ["True", "true"]:
-            file_name = 'original_distance_matrix.txt'
-            phylip_file(key_list, matrix, file_name, output_folder)
+            file_name = 'original_distance_matrix.tsv'
+            export_matrix(key_list, matrix, file_name, output_folder)
     else:
         if bootstrap_distance_matrix in ["True", "true"]:
-            file_name = 'all_distance_matrix.txt'
-            phylip_file(key_list, matrix, file_name, output_folder)
+            file_name = 'all_distance_matrix.tsv'
+            export_matrix(key_list, matrix, file_name, output_folder)
     return tree
 
 
