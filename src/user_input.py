@@ -41,13 +41,29 @@ class UserInput:
             os.mkdir("../" + output_folder)  # Creates a new folder
         return output_folder
 
-    def get_analysis_type(self):
+    def get_sequence_type(self):
         """
-        Returns the analysis type.
-        It could be 'nucleotide' or 'protein'. However the program will also accept 'amino acid' instead of 'protein'.
+        Returns the type of sequence to use for the phylogenetic analysis.
+        If set to 'DNA', the whole DNA sequences are used. If set to 'protein',
+        only the coding sequences are used.
         """
-        analysis_type = self.json_file["analysis_type"]
-        return analysis_type
+        sequence_type = self.json_file["sequence_type"]
+        return sequence_type
+
+    def get_protein_type(self):
+        """
+        Returns the protein type.
+        It could be 'annotated' or 'translated'.
+        """
+        protein_type = self.json_file["protein_type"]
+        return protein_type
+    
+    def get_blast_word_size(self):
+        """
+        Returns the word size parameter to be used when running BLAST.
+        """
+        blast_word_size = self.json_file["blast_word_size"]
+        return blast_word_size
 
     def get_genome_accessions(self):
         """Returns a list of genomes that will be downloaded from ncbi"""

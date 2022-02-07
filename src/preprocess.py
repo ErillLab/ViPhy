@@ -98,16 +98,13 @@ def export_fasta_as_protein_folder(id_lists, protein_seq_lists, working_folder):
     :param protein_seq_lists: list of list of lists. Contains a group of proteins.
     :param working_folder: directory where fasta file will be saved
     """
-    element_count = 0
 
     working_file = "../" + working_folder + '/' + id_lists[0][0] + '.fasta'  # File name
     with open(working_file, "w") as f:
         for protein_double_list in protein_seq_lists:
             list_count = len(protein_double_list)
-            for protein_list in protein_double_list:
-                element_count = len(protein_list)
             for i in range(0, list_count):
-                for j in range(0, element_count):
+                for j in range(0, len(protein_double_list[i])):
                     # Writes identifiers and sequences into the fasta file
                     f.write(">" + str(id_lists[i][j]) + '\n' + str(protein_double_list[i][j]) + "\n")
 
@@ -123,12 +120,12 @@ class Preprocess:
         """Constructs an object for the preprocessing phase."""
         self.error_list = []
 
-    def preprocessing_phase(self, file_name, input_folder, analysis_type, working_folder):
+    def preprocessing_phase(self, file_name, input_folder, sequence_type, protein_type, working_folder):
         """
         Divides the preprocessing phase depending on the analysis type.
         :param file_name: file or folder found inside input folder. It should be a fasta or a genbank file
         :param input_folder: folder where the input files are stored
-        :param analysis_type: type of analysis selected by the user
+        :param protein_type: wheather to obtain protein sequences from annotations or from translating DNA
         :param working_folder: folder where the standardized files will be stored
         :return: Returns the error_list with the detected errors
         """
@@ -139,55 +136,71 @@ class Preprocess:
                                                                                               '/' + file_name):
             self.error_list.append([file_name, "Its an empty file"])
         else:
-            # Checks if the analysis type indicated is "nucleotide"
-            if analysis_type == 'nucleotide':
-                self.preprocessing_as_nucleotide(file_name, file_extension, input_folder, working_folder)
-            # Checks if the analysis type indicated is "protein"
-            elif analysis_type in ['protein', 'amino acid']:
-                self.preprocessing_as_protein(file_name, file_extension, input_folder, working_folder)
-            else:
-                print("Please, indicate a correct analysis type. It should be 'nucleotide' or 'protein'")
+            # Analyse DNA
+            if sequence_type.lower() == 'dna':
+                self.preprocessing_as_nucleotide(file_name, file_extension, input_folder, working_folder, sequence_type)
+            
+            # Analyse proteins
+            elif sequence_type.lower() == 'protein':
+                
+                # Translate proteins
+                if protein_type.lower() == 'translated':
+                    self.preprocessing_as_nucleotide(file_name, file_extension, input_folder, working_folder, sequence_type)
+                
+                # Read annotated proteins
+                elif protein_type.lower() == 'annotated':
+                    self.preprocessing_as_protein(file_name, file_extension, input_folder, working_folder)
+        
         return self.error_list
 
-    def preprocessing_as_nucleotide(self, file, file_extension, input_folder, working_folder):
+    def preprocessing_as_nucleotide(self, file, file_extension, input_folder, working_folder, sequence_type):
         """
-        Gets nucleotide sequences from fasta and genbank files, transforms them into protein sequences and saves the
-        final obtained sequence into a fasta file
+        Gets nucleotide sequences from fasta and genbank files. If required, it transforms
+        them into protein sequences. The final sequence obtained is saved into a fasta file.
         :param file: file or folder found inside input folder. It should be a fasta or a genbank file
-        :param file_extension: file extension. If it is a folder it should be fasta or genbank but it can also be a
-        folder
+        :param file_extension: file extension. If it is a folder it should be fasta or genbank but it can also be a folder
         :param input_folder: folder where the input files are stored
         :param working_folder: folder where the standardized files will be stored
+        :sequence_type: defines what type of sequences to use ('DNA' or 'protein')
         :return: Returns the error_list with the detected errors
         """
         if file_extension in ['.fasta', '.fas', '.fa']:
             sequence_id, sequence = read_fasta_file(input_folder, file)
             if is_nucleotide_true(sequence):  # Checks if the fasta file contains a nucleotide sequence
-                protein_seq = translate_to_protein(sequence)  # Translate to proteins
-                export_fasta(sequence_id, protein_seq,
-                             working_folder)  # Creates a fasta file with the translated sequence
+                if sequence_type.lower() == 'protein':
+                    seq_to_export = translate_to_protein(sequence)  # Translate to proteins
+                elif sequence_type.lower() == 'dna':
+                    seq_to_export = [sequence]
+                else:
+                    raise ValueError("Please, indicate a correct sequence_type. It should be 'DNA' or 'protein'.")
+                export_fasta(sequence_id, seq_to_export, working_folder)  # Creates a fasta file
             else:
                 self.error_list.append([file, "Does not contain a nucleotide sequence."])
         else:
             if file_extension in ['.gb', '.gbk', '.genbank']:
                 sequence_id, sequence, error_list = read_gb_file_as_nucleotide(input_folder, file, self.error_list)
-                protein_seq = translate_to_protein(sequence)
-                export_fasta(sequence_id, protein_seq, working_folder)
-            elif os.path.isdir(input_folder + '/' + file):  # If it finds a folder rather than a file
+                if sequence_type.lower() == 'protein':
+                    seq_to_export = translate_to_protein(sequence)
+                elif sequence_type.lower() == 'dna':
+                    seq_to_export = [sequence]
+                else:
+                    raise ValueError("Please, indicate a correct sequence_type. It should be 'DNA' or 'protein'.")
+                export_fasta(sequence_id, seq_to_export, working_folder)
+            elif os.path.isdir('../' + input_folder + '/' + file):  # If it finds a folder rather than a file
                 subdirectory = input_folder + '/' + file
                 sequence_id = []
-                protein_seq = []
+                list_of_seq = []
                 sequence_list = []
-                for subdirectory_file in os.listdir(subdirectory):
+                for subdirectory_file in os.listdir('../' + subdirectory):
                     extension = os.path.splitext(subdirectory_file)[1]
-                    if os.path.isdir(subdirectory + '/' + subdirectory_file):  # If there is a folder
+                    if os.path.isdir('../' + subdirectory + '/' + subdirectory_file):  # If there is a folder
                         self.error_list.append([subdirectory_file, "There should not be a folder inside a subdirectory"
                                                                    ""])
                     # Checks file extension:
                     elif extension not in ['.fasta', '.fas', '.fa', '.gb', '.gbk', '.genbank']:
                         self.error_list.append([subdirectory_file, "It is not a genbank or fasta file"])
                     else:
-                        if os.stat(subdirectory + '/' + subdirectory_file).st_size == 0:  # If there is a empty file
+                        if os.stat('../' + subdirectory + '/' + subdirectory_file).st_size == 0:  # If there is a empty file
                             self.error_list.append([subdirectory_file, "It is a empty file"])
                         else:
                             identifier, seq, self.error_list = read_gb_file_as_nucleotide(subdirectory,
@@ -197,10 +210,15 @@ class Preprocess:
                                 sequence_id.append(identifier)
                                 sequence_list.append(seq)  # Concatenates all sequences from the subdirectory files
                 for list_element in sequence_list:
-                    protein_seq.append(translate_to_protein(list_element))
-                protein_seq_lists = [protein_seq]
+                    if sequence_type.lower() == 'protein':
+                        list_of_seq.append(translate_to_protein(list_element))
+                    elif sequence_type.lower() == 'dna':
+                        list_of_seq.append(list_element)
+                    else:
+                        raise ValueError("Please, indicate a correct sequence_type. It should be 'DNA' or 'protein'.")
+                list_of_seq_lists = [list_of_seq]
                 # Creates a fasta file with the final translated sequence
-                export_fasta_as_protein_folder(sequence_id, protein_seq_lists,
+                export_fasta_as_protein_folder(sequence_id, list_of_seq_lists,
                                                working_folder)
             else:
                 self.error_list.append([file, "It is not a genbank or a fasta file."])
@@ -228,21 +246,21 @@ class Preprocess:
                 export_fasta(sequence_id, sequence,
                              working_folder)
             else:
-                if os.path.isdir(input_folder + '/' + file):  # If it finds a folder rather than a file
+                if os.path.isdir('../' + input_folder + '/' + file):  # If it finds a folder rather than a file
                     subdirectory = input_folder + '/' + file
                     sequence_id = []
                     protein_seq = []
                     sequence_list = []
-                    for subdirectory_file in os.listdir(subdirectory):
+                    for subdirectory_file in os.listdir('../' + subdirectory):
                         extension = os.path.splitext(subdirectory_file)[1]
-                        if os.path.isdir(subdirectory + '/' + subdirectory_file):  # If there is a folder
+                        if os.path.isdir('../' + subdirectory + '/' + subdirectory_file):  # If there is a folder
                             self.error_list.append([subdirectory_file, "There should not be a folder inside a "
                                                                        "subdirectory"])
                         # Checks file extension:
                         elif extension not in ['.fasta', '.fas', '.fa', '.gb', '.gbk', '.genbank']:
                             self.error_list.append([subdirectory_file, "It is not a genbank or fasta file"])
                         else:
-                            if os.stat(subdirectory + '/' + subdirectory_file).st_size == 0:  # If there is a empty file
+                            if os.stat('../' + subdirectory + '/' + subdirectory_file).st_size == 0:  # If there is a empty file
                                 self.error_list.append([subdirectory_file, "It is a empty file"])
                             else:
                                 identifier, seq, self.error_list = read_gb_file_as_protein(subdirectory,

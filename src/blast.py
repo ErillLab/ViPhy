@@ -1,6 +1,6 @@
 
 from Bio import SeqIO
-from Bio.Blast.Applications import NcbimakeblastdbCommandline, NcbiblastpCommandline
+from Bio.Blast.Applications import NcbimakeblastdbCommandline, NcbiblastpCommandline, NcbiblastnCommandline
 from Bio.Blast import NCBIXML
 
 import os
@@ -27,7 +27,7 @@ class Blast:
         self.dictionary = {}  # dictionary that contains the coverage vector between each sequence pair
         self.distance_dictionary = {}  # dictionary that will contain the distance between sequences
 
-    def make_blast_database(self, working_folder, e_value):
+    def make_blast_database(self, sequence_type, working_folder, e_value, blast_word_size):
         """
         Concatenates all the files extracted from the working folder and creates a BLAST database
         :param working_folder: directory from where we get the fasta files with protein sequences
@@ -47,14 +47,21 @@ class Blast:
 
         db_name = self.db_file.split(".")  # Separates the file name and the file extension
         # Creates a blast database
+        if sequence_type.lower() == 'protein':
+            blast_db_type = "prot"
+        elif sequence_type.lower() == 'dna':
+            blast_db_type = "nucl"
+        else:
+            raise ValueError("Please, indicate a correct sequence_type. It should be 'DNA' or 'protein'.")
+        
         cmd = NcbimakeblastdbCommandline(input_file="../" + self.db_file, out="../" + self.db_folder + '/' + db_name[0],
-                                         dbtype="prot")
-        os.system(str(cmd))
+                                         dbtype=blast_db_type)
+        cmd()
         print("BLAST database has been created")
 
         # Uses Blastp to the coverage_vector for each sequence pair
         print("The sequence alignment might take some time")
-        self.coverage_vector_collection(working_folder, e_value)
+        self.coverage_vector_collection(sequence_type, working_folder, e_value, blast_word_size)
 
         return self.distance_dictionary, self.dictionary
 
@@ -97,9 +104,9 @@ class Blast:
                 self.distance_dictionary[key] = 1.0
             count += 1
 
-    def coverage_vector_collection(self, working_folder, e_value):
+    def coverage_vector_collection(self, sequence_type, working_folder, e_value, blast_word_size):
         """
-        Compares a protein sequence from a fasta file to a protein sequence from the database
+        Compares a sequence from a fasta file to a sequence from the database
         :param working_folder: directory from where we get the fasta files
         :param e_value: number of expected hits of similar quality (score) that could be found just by chance
         :return: Returns a dictionary that contains the coverage vectors
@@ -110,10 +117,18 @@ class Blast:
             seq_file_name = seq_file2[2].split("/")  # Removes the directory from the file name
             alignment_file = "../dbFolder/" + seq_file_name[2] + "_to_DB.xml"  # Final file path
 
-            # Alignment using BLAST of the file against the database
-            cmd = NcbiblastpCommandline(query=seq_file_path, db="../dbFolder/DataBase", evalue=e_value, outfmt=5,
-                                        out="../dbFolder/" + alignment_file)
-            os.system(str(cmd))
+            # Alignment using BLAST of the file against the database            
+            if sequence_type.lower() == 'protein':
+                # blastp command
+                cmd = NcbiblastpCommandline(query=seq_file_path, db="../dbFolder/DataBase", evalue=e_value, outfmt=5,
+                                            out="../dbFolder/" + alignment_file, word_size=blast_word_size)
+            elif sequence_type.lower() == 'dna':
+                # blastn command
+                cmd = NcbiblastnCommandline(query=seq_file_path, db="../dbFolder/DataBase", evalue=e_value, outfmt=5,
+                                            out="../dbFolder/" + alignment_file, word_size=blast_word_size)
+            else:
+                raise ValueError("Please, indicate a correct sequence_type. It should be 'DNA' or 'protein'.")
+            cmd()
 
             # Gets important information from the database to create a list
             self.dictionary.update(self.parse_xml_file(alignment_file))
