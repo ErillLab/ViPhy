@@ -120,14 +120,21 @@ class Blast:
             # Alignment using BLAST of the file against the database            
             if sequence_type.lower() == 'protein':
                 # blastp command
-                cmd = NcbiblastpCommandline(query=seq_file_path, db="../dbFolder/DataBase", evalue=e_value, outfmt=5,
-                                            out="../dbFolder/" + alignment_file, word_size=blast_word_size)
+                if blast_word_size.lower() == 'default':
+                    cmd = NcbiblastpCommandline(query=seq_file_path, db="../dbFolder/DataBase", evalue=e_value, outfmt=5,
+                                                out="../dbFolder/" + alignment_file)
+                else:
+                    cmd = NcbiblastpCommandline(query=seq_file_path, db="../dbFolder/DataBase", evalue=e_value, outfmt=5,
+                                                out="../dbFolder/" + alignment_file, word_size=blast_word_size)
             elif sequence_type.lower() == 'dna':
                 # blastn command
-                cmd = NcbiblastnCommandline(query=seq_file_path, db="../dbFolder/DataBase", evalue=e_value, outfmt=5,
-                                            out="../dbFolder/" + alignment_file, word_size=blast_word_size)
-            else:
-                raise ValueError("Please, indicate a correct sequence_type. It should be 'DNA' or 'protein'.")
+                if blast_word_size.lower() == 'default':
+                    cmd = NcbiblastnCommandline(query=seq_file_path, db="../dbFolder/DataBase", evalue=e_value, outfmt=5,
+                                                out="../dbFolder/" + alignment_file)
+                else:
+                    cmd = NcbiblastnCommandline(query=seq_file_path, db="../dbFolder/DataBase", evalue=e_value, outfmt=5,
+                                                out="../dbFolder/" + alignment_file, word_size=blast_word_size)
+            # Run command
             cmd()
 
             # Gets important information from the database to create a list
