@@ -114,9 +114,10 @@ def export_matrix(key_list, d_matrix, file_name, output_folder):
         # Writes the number of analyzed sequences
         f.write('{}\n'.format(str(length)))
         for i in key_list:
-            for j in range(length):
+            for j in range(length - 1):
                 line += str(d_matrix[count][j])
                 line += "\t"
+            line += str(d_matrix[count][length - 1])  # last element of the row
             line += '\n'
             f.write('{}\t{}'.format(i, line))  # Writes the sequences and the distances of each comparison
             count += 1
