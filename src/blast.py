@@ -120,7 +120,7 @@ class Blast:
             # Alignment using BLAST of the file against the database            
             if sequence_type.lower() == 'protein':
                 # blastp command
-                if blast_word_size.lower() == 'default':
+                if blast_word_size in ['default','Default', None]:
                     cmd = NcbiblastpCommandline(query=seq_file_path, db="../dbFolder/DataBase", evalue=e_value, outfmt=5,
                                                 out="../dbFolder/" + alignment_file)
                 else:
@@ -128,7 +128,7 @@ class Blast:
                                                 out="../dbFolder/" + alignment_file, word_size=blast_word_size)
             elif sequence_type.lower() == 'dna':
                 # blastn command
-                if blast_word_size.lower() == 'default':
+                if blast_word_size in ['default','Default', None]:
                     cmd = NcbiblastnCommandline(query=seq_file_path, db="../dbFolder/DataBase", evalue=e_value, outfmt=5,
                                                 out="../dbFolder/" + alignment_file)
                 else:
