@@ -67,29 +67,24 @@ def read_gb_file_as_protein(input_folder, gb_file, error_list):
     protein_list = []
     print('Reading ' + gb_file)
 
-    file_name = str(gb_file).split('.')  # Delete extension from the file name
-    list_length = len(file_name)
-    with open("../" + input_folder + '/' + gb_file, 'r') as gb_file:
-        gb_cds = SeqIO.InsdcIO.GenBankCdsFeatureIterator(gb_file)
-        if list_length == 2:
-            recorder = SeqIO.read("../" + input_folder + '/' + file_name[0] + '.' + file_name[1], "genbank")
-        elif list_length == 3:
-            recorder = SeqIO.read("../" + input_folder + '/' + file_name[0] + '.' + file_name[1] + '.' + file_name[2],
-                                  "genbank")
+    gb_name = ".".join(gb_file.split('.')[:-1])
+    with open("../" + input_folder + '/' + gb_file, 'r') as f:
+        gb_cds = SeqIO.InsdcIO.GenBankCdsFeatureIterator(f)
+        recorder = SeqIO.read("../" + input_folder + '/' + gb_file, "genbank")
         description = recorder.description
 
         # Modifies the file name to respect a standard format
         description_seq = description.replace("-", "_").replace(" ", "_").replace("(", "_").replace(")", "_")
         description_seq = description_seq.replace("[", "_").replace("]", "_")
-        description_division = description_seq.split("/")
-        description_name = description_division[0].split(",")
+        description_division = description_seq.split("/")[0]
+        description_name = description_division.split(",")[0]
 
         for cds in gb_cds:
             if cds.seq is not None:  # Checks if there is an amino acid sequence
-                if file_name[0] not in id_list:
-                    id_list.append(str(file_name[0]) + '_' + str(description_name[0]))  # Final file name
+                if gb_name not in id_list:
+                    id_list.append(gb_name + '_' + description_name)  # Final file name
                 else:
-                    id_list.append(str(cds.id) + '_' + str(description_name[0]))
+                    id_list.append(str(cds.id) + '_' + description_name)
                 protein_list.append(cds.seq)
             elif isinstance(cds.seq, UnknownSeq):
                 error_list.append([gb_file, "There seems to be no sequence in this GenBank file"])

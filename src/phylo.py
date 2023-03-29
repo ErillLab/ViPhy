@@ -83,10 +83,11 @@ class Phylogeny:
         :param cutoff: threshold used to compare the branches from different trees. Any clade that has <= cutoff support
         will be dropped.
         """
-        print("Majority consensus tree: ")
         majority_tree = Consensus.majority_consensus(tree_list, cutoff)
         Phylo.write(majority_tree, "../" + output_folder + "/majority_consensus_tree.nwk", self.tree_format)
-        Phylo.write(majority_tree, sys.stdout, self.tree_format)
+        # Also print to standard output
+        # print("Majority consensus tree: ")
+        # Phylo.write(majority_tree, sys.stdout, self.tree_format)
 
     def get_support_tree(self, original_tree, trees, output_folder):
         """
@@ -95,7 +96,8 @@ class Phylogeny:
         :param trees: list of trees created with bootstrap
         :param output_folder: name of the file where the consensus tree will be stored
         """
-        print("Support tree: ")
         tree_with_support = Consensus.get_support(original_tree, trees)
         Phylo.write(tree_with_support, "../" + output_folder + "/support_consensus_tree.nwk", self.tree_format)
-        Phylo.write(tree_with_support, sys.stdout, self.tree_format)
+        # Also print to standard output
+        # print("Support tree: ")
+        # Phylo.write(tree_with_support, sys.stdout, self.tree_format)
