@@ -80,7 +80,7 @@ def read_gb_file_as_protein(input_folder, gb_file, error_list):
         description_name = description_division.split(",")[0]
 
         for cds in gb_cds:
-            if cds.seq is not None:  # Checks if there is a CDS
+            if cds.seq is not None:  # Checks if there is an amino acid sequence
                 if gb_name not in id_list:
                     id_list.append(gb_name + '_' + description_name)  # Final file name
                 else:
