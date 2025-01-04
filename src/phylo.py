@@ -21,9 +21,8 @@ class Phylogeny:
         self.tree_format = "newick"
 
     def get_newick_tree(self, dictionary, distance_dictionary, distance_function, replicates, working_folder,
-                       output_folder, original_distance_matrix, bootstrap_distance_matrix,
-                       original_newick_tree):
-       """
+                    output_folder, original_distance_matrix, bootstrap_distance_matrix, original_newick_tree):
+        """
        Calculates the distance between two sequences with the formula indicated by the user. It is done as many times
        as specified by the number of replicates. Once the distance values have been obtained, it is time to create a
        phylogenetic tree.
@@ -40,52 +39,61 @@ class Phylogeny:
        :param original_newick_tree: boolean used to indicate if the user wants to generate a tree with original data
        :return: Returns a tree following the newick format
        """
-       original_dictionary = dictionary
-       while self.count <= replicates:
-           if self.count != 0:
-               dictionary = bootstrap(original_dictionary)  # Bootstrap to all the coverage vectors
+        original_dictionary = dictionary
+        # Track used pairs
+        computed_pairs = set()
 
+        while self.count <= replicates:
+            if self.count != 0:
+                dictionary = bootstrap(original_dictionary)  # Bootstrap to all the coverage vectors
 
-           # Process sequentially
-           keys = list(dictionary.keys())
-           num_keys = len(keys)
+            # Process sequentially
+            keys = list(dictionary.keys())
+            num_keys = len(keys)
 
+            # Process pairs 
+            for i in range(num_keys):
+                key1 = keys[i]
+                seq1 = dictionary[key1]  # First sequence
+                for j in range(i + 1, num_keys):  
+                    key2 = keys[j]
+                    seq2 = dictionary[key2]  # Second sequence
 
-           for i in range(num_keys):
-               key1 = keys[i]
-               seq1 = dictionary[key1]  # First sequence
+                    # Create a pair 
+                    pair_key = (key1, key2)
 
+                    # check if pair has already been computed
+                    if pair_key in computed_pairs or (key2, key1) in computed_pairs:
+                        continue
+                    # mark the pair as processed if new
+                    computed_pairs.add(pair_key)
+                    computed_pairs.add((key2, key1))
 
-               for j in range(i + 1, num_keys):
-                   key2 = keys[j]
-                   seq2 = dictionary[key2]  # Second sequence
+                    # mark the pair as processed if new
+                    computed_pairs.add(pair_key)
 
+                    # Create a temporary dictionary
+                    pair_dict = {key1: seq1, key2: seq2}
+                    if distance_function == 'd0':
+                        distance_dictionary = d0(pair_dict, distance_dictionary)
+                    elif distance_function == 'd4':
+                        distance_dictionary = d4(pair_dict, distance_dictionary)
+                    elif distance_function == 'd6':
+                        distance_dictionary = d6(pair_dict, distance_dictionary)
+                    else:
+                        print("Please, introduce a valid distance function. It can be 'd0', 'd4' or 'd6'.")
 
-                   # Create a temporary dictionary
-                   pair_dict = {key1: seq1, key2: seq2}
-                   if distance_function == 'd0':
-                       distance_dictionary = d0(pair_dict, distance_dictionary)
-                   elif distance_function == 'd4':
-                       distance_dictionary = d4(pair_dict, distance_dictionary)
-                   elif distance_function == 'd6':
-                       distance_dictionary = d6(pair_dict, distance_dictionary)
-                   else:
-                       print("Please, introduce a valid distance function. It can be 'd0', 'd4' or 'd6'.")
+           
+            newick_tree = distance_matrix(distance_dictionary, self.count, working_folder, output_folder,
+                                        original_distance_matrix, bootstrap_distance_matrix, original_newick_tree)
 
+          
+            if self.count == 0:
+                original_newick_tree = newick_tree  
 
-           newick_tree = distance_matrix(distance_dictionary, self.count, working_folder, output_folder,
-                                       original_distance_matrix, bootstrap_distance_matrix, original_newick_tree)
+            self.count += 1
 
-
-      
-           if self.count == 0:
-               original_newick_tree = newick_tree # Tree before bootstrap
-
-
-           self.count += 1
-
-
-       return original_newick_tree
+        return original_newick_tree
 
     def get_tree_list(self, working_folder):
         """

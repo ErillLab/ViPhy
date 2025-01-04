@@ -101,7 +101,7 @@ def go():
     preprocess_phase = Preprocess()
     for file in os.listdir("../" + input_folder):  # Navigates into the input_folder
         n_files += 1
-        error_list = preprocess_phase.preprocessing_phase(file, input_folder, sequence_type, protein_type, working_folder)
+        error_list += preprocess_phase.preprocessing_phase(file, input_folder, sequence_type, protein_type, working_folder)
 
     # Displays a list of error detected in the preprocessing code
     display_error_messages(error_list)

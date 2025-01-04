@@ -131,41 +131,47 @@ def d4(coverage_vector_dictionary, distance_dictionary):
 def d6(coverage_vector_dictionary, distance_dictionary):
     """
     Calculates the distance between two sequences using the number of identical bases between them and the total
-    length of the two sequences
+    length of the two sequences. The distance is computed once and stored for both (1 VS 2) and (2 VS 1).
     :param coverage_vector_dictionary: Dictionary that contains the coverage vectors
     :param distance_dictionary: Dictionary that will contain the calculated distances
     :return: Returns the current distance dictionary
     """
-    for key in coverage_vector_dictionary.keys():
-        # Sequences
-        coverage_vector = coverage_vector_dictionary[key]
+    keys = list(coverage_vector_dictionary.keys())
+    for i in range(len(keys)):
+        key1 = keys[i]
+        seq1 = coverage_vector_dictionary[key1]
+        for j in range(i + 1, len(keys)):
+            key2 = keys[j]
+            seq2 = coverage_vector_dictionary[key2]
 
-        # Gets inverted key
-        inverted_key = get_inverted_key(key)
-        inverted_coverage_vector = coverage_vector_dictionary[inverted_key]
+            # Identities
+            identities1 = identities(seq1)
+            identities2 = identities(seq2)
 
-        # Identities
-        identities1 = identities(coverage_vector)
-        identities2 = identities(inverted_coverage_vector)
+            # Values of the coverage vector that are not zero
+            dif_zero1 = vector_no_zeros(seq1)
+            dif_zero2 = vector_no_zeros(seq2)
 
-        # Values of the coverage vector that are not zero
-        dif_zero1 = vector_no_zeros(coverage_vector)
-        dif_zero2 = vector_no_zeros(inverted_coverage_vector)
+            if dif_zero1 != 0 and dif_zero2 != 0:
+                # Calculates the average identity between the coverage vector and its opposite
+                total_identities = (identities1 + identities2) * 0.5
 
-        if dif_zero1 != 0 and dif_zero2 != 0:
-            # Calculates the average identity between the coverage vector and its opposite
-            total_identities = (identities1 + identities2) * 0.5
 
-            # Calculate the length of the complete vector
-            total_length = vector_length(coverage_vector)
-            total_length += vector_length(inverted_coverage_vector)
+                #length of the complete vector
+                total_length = vector_length(seq1) + vector_length(seq2)
 
-            # Distance formula
-            result = 1 - ((2 * total_identities) / total_length)
-            result = "{:.8f}".format(result)
-            distance_dictionary[key] = float(result)  # Limits the distance value to 5 decimals
-        else:  # Both sequences are completely different
-            distance_dictionary[key] = 1.0
+                # Distance formula
+                result = 1 - ((2 * total_identities) / total_length)
+                result = "{:.8f}".format(result)
+                
+               
+                distance_dictionary[f"{key1}-{key2}"] = float(result)
+                #reverse
+                distance_dictionary[f"{key2}-{key1}"] = float(result) 
+            else:
+                # Both sequences are completely different
+                distance_dictionary[f"{key1}-{key2}"] = 1.0 
+                distance_dictionary[f"{key2}-{key1}"] = 1.0 
 
     return distance_dictionary
 
