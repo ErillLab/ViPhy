@@ -198,15 +198,21 @@ def distance_matrix(dictionary, replicates, working_folder, output_folder, origi
         if key_parts[0] not in key_list:
             key_list.append(key_parts[0])
 
-    matrix = []
-    # Create the matrix distance with distances calculated before
-    for first_key in key_list:
-        list = []
-        for second_key in key_list:
-            list.append(dictionary[first_key + '-' + second_key])
-        matrix.append(list)
+    size = len(key_list)
+    matrix = [[0]*size]*size
+
+    
+    # Only calculate upper triangle
+    for i in range(n):
+        for j in range(i+1, n):
+            key = f"{key_list[i]}-{key_list[j]}"
+            dist = dictionary[key]
+            matrix[i][j] = dist
+            # Mirror
+            matrix[j][i] = dist
+    
     tree = lower_triangle_matrix(matrix, key_list, replicates, working_folder, output_folder,
-                                 original_newick_tree)
+                                original_newick_tree)
 
     if replicates == 0:
         if original_distance_matrix in ["True", "true"]:
