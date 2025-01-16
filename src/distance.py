@@ -203,8 +203,8 @@ def distance_matrix(dictionary, replicates, working_folder, output_folder, origi
 
     
     # Only calculate upper triangle
-    for i in range(n):
-        for j in range(i+1, n):
+    for i in range(size):
+        for j in range(i+1, size):
             key = f"{key_list[i]}-{key_list[j]}"
             dist = dictionary[key]
             matrix[i][j] = dist
