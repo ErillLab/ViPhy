@@ -283,18 +283,23 @@ def lower_triangle_matrix(d_matrix, key_list, replicates, working_folder, output
 
     return tree
 
-
-def bootstrap(boostrap_sample_dict):
+def bootstrap(bootstrap_sample_dict):
     """
     Samples a dataset with a specific number of replacements
     :param boostrap_sample_dict: dictionary that contains the coverage vectors previously calculated
     :return Returns a dictionary with the new samples created
+    
     """
-    for key in boostrap_sample_dict.keys():
-        length = len(boostrap_sample_dict[key])
+    for key in bootstrap_sample_dict.keys():
+        length = len(bootstrap_sample_dict[key])
         aux_list = []
-        for i in range(0, length):
-            position = randrange(length)
-            aux_list.append(boostrap_sample_dict[key][position])
-        boostrap_sample_dict[key] = aux_list
-    return boostrap_sample_dict
+        
+        # Generate all random indices at once using NumPy
+        random_indices = np.random.randint(0, length, size=length)
+
+        for i in range(0,length):
+            aux_list.append(bootstrap_sample_dict[key][random_indices[i]])
+        
+        bootstrap_sample_dict[key] = aux_list
+    
+    return bootstrap_sample_dict
